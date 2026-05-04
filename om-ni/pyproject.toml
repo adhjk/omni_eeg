@@ -40,4 +40,4 @@ oi-mi = "cli:cli"
 py-modules = ["cli", "gui", "web_command_server", "game_command_router"]
 
 [tool.setuptools.packages.find]
-include = ["acquisition*", "adaptation*", "collect*", "decoder*", "models*", "utils*"]
+include = ["acquisition*", "adaptation*", "collect*", "decoder*", "models*", "utils*", "tasks*"]

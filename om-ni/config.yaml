@@ -2,6 +2,7 @@
 # model_name: eegnet
 # device_type: brainco
 # hardware_dummy_mode: true #added
+# task_mode: motor
 # sfreq: 250
 # n_classes: 3
 # window_sec: 2.0
@@ -78,6 +79,7 @@ subject_id: S002
 model_name: eegnet
 device_type: brainco
 hardware_dummy_mode: true
+task_mode: visual
 sfreq: 250
 n_classes: 3
 window_sec: 1.0        # 缩小窗口，避免切不出来
@@ -110,7 +112,7 @@ protocol:
     control_sec: 2.0           # 保持 2s 不动
     iti_sec: 0.5
   new_subject_blocks: 1
-  new_subject_trials_per_class_per_block: 1
+  new_subject_trials_per_class_per_block: 4
   old_subject_baseline_sec: 10.0
   old_subject_trials_per_class: 2
   rest_between_blocks_sec: 2.0

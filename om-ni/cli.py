@@ -28,6 +28,7 @@ from utils.markers import (
     TriggerBoxMarkerBackend,
 )
 from utils.preprocessing import filter_and_transform
+from tasks.task_factory import load_task_from_config
 from web_command_server import start_web_command_server
 
 LOGGER = logging.getLogger(__name__)
@@ -39,6 +40,7 @@ _DEFAULT_CONFIG_TEMPLATE: dict[str, Any] = {
     "model_name": "riemann-mdm",
     "device_type": "neuracle",
     "hardware_dummy_mode": False, # added
+    "task_mode": "motor",
     "sfreq": 250,
     "n_classes": 3,
     "window_sec": 2.0,
@@ -965,6 +967,8 @@ def calibrate(
         raise click.ClickException("Choose exactly one of --new or --old.")
 
     config = app.config
+    task = load_task_from_config(config)
+    task_console = task.wrap_console(app.console)
     selected_model = model_name or str(config["model_name"])
     duration_sec = duration or int(
         config["new_subject_duration_sec"] if is_new else config["old_subject_duration_sec"]
@@ -997,8 +1001,8 @@ def calibrate(
     calibrator = calibrator_class(
         acquirer=acquirer,
         model=model,
-        marker_backend=build_marker_backend(config),
-        console=app.console,
+        marker_backend=task.wrap_marker_backend(build_marker_backend(config)),
+        console=task_console,
         sfreq=float(config["sfreq"]),
         window_sec=float(config["window_sec"]),
         step_sec=float(config["step_sec"]),
@@ -1054,6 +1058,8 @@ def run(
     """Run the realtime decoder."""
 
     config = app.config
+    task = load_task_from_config(config)
+    task_console = task.wrap_console(app.console)
     selected_model = model_name or str(config["model_name"])
     selected_device = device_name or str(config["device_type"])
     acquirer = build_acquirer(device_name=selected_device, config=config)
@@ -1084,7 +1090,7 @@ def run(
     decoder = realtime_decoder_class(
         acquirer=acquirer,
         model=model,
-        console=app.console,
+        console=task_console,
         command_outlet=command_outlet,
         game_command_outlet=game_command_outlet,
         sfreq=float(config["sfreq"]),
@@ -1094,7 +1100,7 @@ def run(
         mc_dropout_passes=int(config["mc_dropout_passes"]),
     )
     if test_mode:
-        marker_backend = build_marker_backend(config)
+        marker_backend = task.wrap_marker_backend(build_marker_backend(config))
         records_dir = Path(str(config.get("storage", {}).get("records_dir", "records_storage")))
         result = decoder.run_test_mode(
             subject_id=subject_id,

@@ -25,6 +25,7 @@ from cli import (
 )
 from decoder.real_time_decoder import RealTimeDecoder, TEST_MODE_PROMPTS
 from models.factory import ModelFactory
+from tasks.task_factory import load_task_from_config
 from utils.markers import LSLCommandOutlet
 
 _GUI_ROOT = Path(__file__).resolve().parent
@@ -474,6 +475,8 @@ def render_calibration(config: dict) -> None:
             )
             effective_n_channels = int(acquirer.metadata.n_channels)
             console, refresh = init_live_view()
+            task = load_task_from_config(config)
+            task_console = task.wrap_console(console)
             model = ModelFactory.get(
                 model_name,
                 n_chans=effective_n_channels,
@@ -490,8 +493,8 @@ def render_calibration(config: dict) -> None:
             calibrator = Calibrator(
                 acquirer=acquirer,
                 model=model,
-                marker_backend=build_marker_backend(config),
-                console=console,
+                marker_backend=task.wrap_marker_backend(build_marker_backend(config)),
+                console=task_console,
                 sfreq=float(config["sfreq"]),
                 window_sec=float(config["window_sec"]),
                 step_sec=float(config["step_sec"]),
@@ -543,6 +546,8 @@ def render_test_mode(config: dict) -> None:
             )
             effective_n_channels = int(acquirer.metadata.n_channels)
             console, refresh = init_live_view()
+            task = load_task_from_config(config)
+            task_console = task.wrap_console(console)
             model = ModelFactory.get(
                 model_name,
                 n_chans=effective_n_channels,
@@ -568,7 +573,7 @@ def render_test_mode(config: dict) -> None:
             decoder = RealTimeDecoder(
                 acquirer=acquirer,
                 model=model,
-                console=console,
+                console=task_console,
                 command_outlet=command_outlet,
                 game_command_outlet=build_game_command_outlet(config),
                 sfreq=float(config["sfreq"]),
@@ -581,7 +586,7 @@ def render_test_mode(config: dict) -> None:
             with st.spinner("测试模式采集中..."):
                 result = decoder.run_test_mode(
                     subject_id=subject_id,
-                    marker_backend=build_marker_backend(config),
+                    marker_backend=task.wrap_marker_backend(build_marker_backend(config)),
                     duration_sec=int(duration),
                     block_sec=float(config.get("collect_block_sec", 10.0)),
                     save_dir=Path(str(config.get("storage", {}).get("records_dir", "records_storage")))
@@ -614,6 +619,8 @@ def render_realtime(config: dict) -> None:
             )
             effective_n_channels = int(acquirer.metadata.n_channels)
             console, refresh = init_live_view()
+            task = load_task_from_config(config)
+            task_console = task.wrap_console(console)
             model = ModelFactory.get(
                 model_name,
                 n_chans=effective_n_channels,
@@ -635,7 +642,7 @@ def render_realtime(config: dict) -> None:
             decoder = RealTimeDecoder(
                 acquirer=acquirer,
                 model=model,
-                console=console,
+                console=task_console,
                 command_outlet=LSLCommandOutlet(
                     stream_name=str(config["output"]["command_stream_name"]),
                     stream_type=str(config["output"]["command_stream_type"]),
