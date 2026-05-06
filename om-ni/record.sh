@@ -1,26 +1,3 @@
-# 临时：export PYTHONPATH="/mnt/dataset0/cst/omni/om-ni:$PYTHONPATH"
-# TODO: 模块化task，让其方便通过一个指令从运动想象转到其他任务
-# # 1. 测试模式（带cue+准确率计算）
-# oi-mi run --test-mode --subject S001 --model riemann-mdm
-
-# # 2. 纯实时在线解码
-# oi-mi run --subject S001 --model riemann-mdm
-
-
-# cat > .git/config << 'EOF'
-# [core]
-#         repositoryformatversion = 0
-#         filemode = false
-# [user]
-#         name = adhjk
-#         email = 1789377149@qq.com
-# EOF
-
-
-
-直接给你**当前整套项目、可直接复制运行**的三条核心测试命令，对应：校准 / 测试模式 / 实时解码，兼容你新的 `streamlit GUI + task_factory 多任务架构`
-
----
 
 ## 1. 启动 Web 可视化GUI（必开，所有操作都在网页里）
 ```bash
@@ -59,15 +36,5 @@ task_mode: visual
 ```bash
 oi-mi calibrate --new --subject S001 --task-mode visual
 ```
-
----
-
-### 关键补充（对应你刚才的GUI疑问）
-1. 无论命令行 / Streamlit网页GUI，都会自动读取 `task_mode`
-   - 空/motor → 原左手/右手文字+箭头UI
-   - visual → 你后续要做的：自定义提示语+EEG图片+音频
-2. 代码里遗留的`LEFT/RIGHT`只影响**网页图标显示**，
-   不改变marker、标签、模型、行为任务、数据存储。
-
-需要我给你一条 **直接强制使用visual任务** 的完整测试命令吗？
-
+使用数据训练的代码，如果需要修改路径就去config.yaml修改
+oi-mi train-from-records --subject S001 --model eegnet

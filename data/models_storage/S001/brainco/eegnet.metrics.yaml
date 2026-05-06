@@ -1,9 +1,0 @@
-model_path: models_storage\S001\brainco\eegnet.pt
-windows_collected: 720
-head_only: false
-sfreq: 250.0
-window_sec: 2.0
-step_sec: 0.5
-metrics:
-  val_loss: 0.8355348706245422
-  val_acc: 0.6111111044883728

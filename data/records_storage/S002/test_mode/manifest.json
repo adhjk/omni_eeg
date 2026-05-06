@@ -1,9 +1,0 @@
-{
-  "subject_id": "S002",
-  "mode": "test_mode",
-  "start_time": 1776428765.9284813,
-  "sfreq": 250.0,
-  "window_sec": 2.0,
-  "step_sec": 0.5,
-  "channels": 32
-}
