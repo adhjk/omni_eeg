@@ -1,0 +1,17 @@
+{
+  "subject_id": "S001",
+  "mode": "test_mode",
+  "start_time": 1776093405.753219,
+  "sfreq": 250.0,
+  "window_sec": 2.0,
+  "step_sec": 0.5,
+  "channels": 32,
+  "chunk_size": 500,
+  "chunk_count": 0,
+  "total_windows": 0,
+  "dropped_records": 0,
+  "files": [],
+  "end_time": 1776093527.7957044,
+  "accuracy": 0.3333333333333333,
+  "valid_accuracy": 0.3333333333333333
+}

@@ -1,0 +1,941 @@
+[
+  {
+    "name": "session_start",
+    "sample_index": 0,
+    "relative_time_sec": 0.0,
+    "payload": {
+      "marker_code": 101,
+      "phase": "session",
+      "subject_mode": "new"
+    }
+  },
+  {
+    "name": "fixation_on",
+    "sample_index": 0,
+    "relative_time_sec": 0.0,
+    "payload": {
+      "marker_code": 130,
+      "phase": "practice",
+      "block_index": -1,
+      "trial_index": 0,
+      "label": "left"
+    }
+  },
+  {
+    "name": "cue_left_on",
+    "sample_index": 500,
+    "relative_time_sec": 2.0,
+    "payload": {
+      "marker_code": 131,
+      "phase": "practice",
+      "block_index": -1,
+      "trial_index": 0,
+      "label": "left"
+    }
+  },
+  {
+    "name": "control_on",
+    "sample_index": 756,
+    "relative_time_sec": 3.0,
+    "payload": {
+      "marker_code": 134,
+      "phase": "practice",
+      "block_index": -1,
+      "trial_index": 0,
+      "label": "left"
+    }
+  },
+  {
+    "name": "control_off",
+    "sample_index": 2004,
+    "relative_time_sec": 8.0,
+    "payload": {
+      "marker_code": 135,
+      "phase": "practice",
+      "block_index": -1,
+      "trial_index": 0,
+      "label": "left"
+    }
+  },
+  {
+    "name": "iti_on",
+    "sample_index": 2004,
+    "relative_time_sec": 8.0,
+    "payload": {
+      "marker_code": 136,
+      "phase": "practice",
+      "block_index": -1,
+      "trial_index": 0,
+      "label": "left"
+    }
+  },
+  {
+    "name": "fixation_on",
+    "sample_index": 2508,
+    "relative_time_sec": 10.0,
+    "payload": {
+      "marker_code": 130,
+      "phase": "practice",
+      "block_index": -1,
+      "trial_index": 1,
+      "label": "right"
+    }
+  },
+  {
+    "name": "cue_right_on",
+    "sample_index": 3012,
+    "relative_time_sec": 12.0,
+    "payload": {
+      "marker_code": 132,
+      "phase": "practice",
+      "block_index": -1,
+      "trial_index": 1,
+      "label": "right"
+    }
+  },
+  {
+    "name": "control_on",
+    "sample_index": 3256,
+    "relative_time_sec": 13.0,
+    "payload": {
+      "marker_code": 134,
+      "phase": "practice",
+      "block_index": -1,
+      "trial_index": 1,
+      "label": "right"
+    }
+  },
+  {
+    "name": "control_off",
+    "sample_index": 4512,
+    "relative_time_sec": 18.0,
+    "payload": {
+      "marker_code": 135,
+      "phase": "practice",
+      "block_index": -1,
+      "trial_index": 1,
+      "label": "right"
+    }
+  },
+  {
+    "name": "iti_on",
+    "sample_index": 4512,
+    "relative_time_sec": 18.0,
+    "payload": {
+      "marker_code": 136,
+      "phase": "practice",
+      "block_index": -1,
+      "trial_index": 1,
+      "label": "right"
+    }
+  },
+  {
+    "name": "fixation_on",
+    "sample_index": 5004,
+    "relative_time_sec": 20.0,
+    "payload": {
+      "marker_code": 130,
+      "phase": "practice",
+      "block_index": -1,
+      "trial_index": 2,
+      "label": "idle"
+    }
+  },
+  {
+    "name": "cue_idle_on",
+    "sample_index": 5512,
+    "relative_time_sec": 22.0,
+    "payload": {
+      "marker_code": 133,
+      "phase": "practice",
+      "block_index": -1,
+      "trial_index": 2,
+      "label": "idle"
+    }
+  },
+  {
+    "name": "control_on",
+    "sample_index": 5760,
+    "relative_time_sec": 23.0,
+    "payload": {
+      "marker_code": 134,
+      "phase": "practice",
+      "block_index": -1,
+      "trial_index": 2,
+      "label": "idle"
+    }
+  },
+  {
+    "name": "control_off",
+    "sample_index": 7016,
+    "relative_time_sec": 28.0,
+    "payload": {
+      "marker_code": 135,
+      "phase": "practice",
+      "block_index": -1,
+      "trial_index": 2,
+      "label": "idle"
+    }
+  },
+  {
+    "name": "iti_on",
+    "sample_index": 7016,
+    "relative_time_sec": 28.0,
+    "payload": {
+      "marker_code": 136,
+      "phase": "practice",
+      "block_index": -1,
+      "trial_index": 2,
+      "label": "idle"
+    }
+  },
+  {
+    "name": "fixation_on",
+    "sample_index": 7516,
+    "relative_time_sec": 30.01600000000326,
+    "payload": {
+      "marker_code": 130,
+      "phase": "practice",
+      "block_index": -1,
+      "trial_index": 3,
+      "label": "left"
+    }
+  },
+  {
+    "name": "cue_left_on",
+    "sample_index": 8020,
+    "relative_time_sec": 32.01600000000326,
+    "payload": {
+      "marker_code": 131,
+      "phase": "practice",
+      "block_index": -1,
+      "trial_index": 3,
+      "label": "left"
+    }
+  },
+  {
+    "name": "control_on",
+    "sample_index": 8268,
+    "relative_time_sec": 33.01600000000326,
+    "payload": {
+      "marker_code": 134,
+      "phase": "practice",
+      "block_index": -1,
+      "trial_index": 3,
+      "label": "left"
+    }
+  },
+  {
+    "name": "control_off",
+    "sample_index": 9512,
+    "relative_time_sec": 38.01600000000326,
+    "payload": {
+      "marker_code": 135,
+      "phase": "practice",
+      "block_index": -1,
+      "trial_index": 3,
+      "label": "left"
+    }
+  },
+  {
+    "name": "iti_on",
+    "sample_index": 9512,
+    "relative_time_sec": 38.01600000000326,
+    "payload": {
+      "marker_code": 136,
+      "phase": "practice",
+      "block_index": -1,
+      "trial_index": 3,
+      "label": "left"
+    }
+  },
+  {
+    "name": "fixation_on",
+    "sample_index": 10016,
+    "relative_time_sec": 40.03200000000652,
+    "payload": {
+      "marker_code": 130,
+      "phase": "practice",
+      "block_index": -1,
+      "trial_index": 4,
+      "label": "right"
+    }
+  },
+  {
+    "name": "cue_right_on",
+    "sample_index": 10516,
+    "relative_time_sec": 42.03200000000652,
+    "payload": {
+      "marker_code": 132,
+      "phase": "practice",
+      "block_index": -1,
+      "trial_index": 4,
+      "label": "right"
+    }
+  },
+  {
+    "name": "control_on",
+    "sample_index": 10776,
+    "relative_time_sec": 43.03200000000652,
+    "payload": {
+      "marker_code": 134,
+      "phase": "practice",
+      "block_index": -1,
+      "trial_index": 4,
+      "label": "right"
+    }
+  },
+  {
+    "name": "control_off",
+    "sample_index": 12016,
+    "relative_time_sec": 48.03200000000652,
+    "payload": {
+      "marker_code": 135,
+      "phase": "practice",
+      "block_index": -1,
+      "trial_index": 4,
+      "label": "right"
+    }
+  },
+  {
+    "name": "iti_on",
+    "sample_index": 12016,
+    "relative_time_sec": 48.03200000000652,
+    "payload": {
+      "marker_code": 136,
+      "phase": "practice",
+      "block_index": -1,
+      "trial_index": 4,
+      "label": "right"
+    }
+  },
+  {
+    "name": "baseline_start",
+    "sample_index": 12524,
+    "relative_time_sec": 50.03200000000652,
+    "payload": {
+      "marker_code": 110,
+      "phase": "baseline",
+      "segment_name": "eyes_open_fixation"
+    }
+  },
+  {
+    "name": "baseline_end",
+    "sample_index": 27540,
+    "relative_time_sec": 110.03200000000652,
+    "payload": {
+      "marker_code": 111,
+      "phase": "baseline",
+      "segment_name": "eyes_open_fixation"
+    }
+  },
+  {
+    "name": "baseline_start",
+    "sample_index": 27540,
+    "relative_time_sec": 110.03200000000652,
+    "payload": {
+      "marker_code": 110,
+      "phase": "baseline",
+      "segment_name": "game_view_idle"
+    }
+  },
+  {
+    "name": "baseline_end",
+    "sample_index": 42548,
+    "relative_time_sec": 170.03200000000652,
+    "payload": {
+      "marker_code": 111,
+      "phase": "baseline",
+      "segment_name": "game_view_idle"
+    }
+  },
+  {
+    "name": "baseline_start",
+    "sample_index": 42548,
+    "relative_time_sec": 170.03200000000652,
+    "payload": {
+      "marker_code": 110,
+      "phase": "baseline",
+      "segment_name": "idle_fixation"
+    }
+  },
+  {
+    "name": "baseline_end",
+    "sample_index": 57564,
+    "relative_time_sec": 230.03200000000652,
+    "payload": {
+      "marker_code": 111,
+      "phase": "baseline",
+      "segment_name": "idle_fixation"
+    }
+  },
+  {
+    "name": "block_start",
+    "sample_index": 57564,
+    "relative_time_sec": 230.03200000000652,
+    "payload": {
+      "marker_code": 120,
+      "phase": "formal",
+      "block_index": 0
+    }
+  },
+  {
+    "name": "fixation_on",
+    "sample_index": 57564,
+    "relative_time_sec": 230.03200000000652,
+    "payload": {
+      "marker_code": 130,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 0,
+      "label": "right"
+    }
+  },
+  {
+    "name": "cue_right_on",
+    "sample_index": 58056,
+    "relative_time_sec": 232.03200000000652,
+    "payload": {
+      "marker_code": 132,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 0,
+      "label": "right"
+    }
+  },
+  {
+    "name": "control_on",
+    "sample_index": 58316,
+    "relative_time_sec": 233.03200000000652,
+    "payload": {
+      "marker_code": 134,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 0,
+      "label": "right"
+    }
+  },
+  {
+    "name": "control_off",
+    "sample_index": 59560,
+    "relative_time_sec": 238.03200000000652,
+    "payload": {
+      "marker_code": 135,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 0,
+      "label": "right"
+    }
+  },
+  {
+    "name": "iti_on",
+    "sample_index": 59560,
+    "relative_time_sec": 238.03200000000652,
+    "payload": {
+      "marker_code": 136,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 0,
+      "label": "right"
+    }
+  },
+  {
+    "name": "fixation_on",
+    "sample_index": 60060,
+    "relative_time_sec": 240.03200000000652,
+    "payload": {
+      "marker_code": 130,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 1,
+      "label": "left"
+    }
+  },
+  {
+    "name": "cue_left_on",
+    "sample_index": 60552,
+    "relative_time_sec": 242.03200000000652,
+    "payload": {
+      "marker_code": 131,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 1,
+      "label": "left"
+    }
+  },
+  {
+    "name": "control_on",
+    "sample_index": 60808,
+    "relative_time_sec": 243.03200000000652,
+    "payload": {
+      "marker_code": 134,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 1,
+      "label": "left"
+    }
+  },
+  {
+    "name": "control_off",
+    "sample_index": 62068,
+    "relative_time_sec": 248.0470000000205,
+    "payload": {
+      "marker_code": 135,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 1,
+      "label": "left"
+    }
+  },
+  {
+    "name": "iti_on",
+    "sample_index": 62068,
+    "relative_time_sec": 248.0470000000205,
+    "payload": {
+      "marker_code": 136,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 1,
+      "label": "left"
+    }
+  },
+  {
+    "name": "fixation_on",
+    "sample_index": 62572,
+    "relative_time_sec": 250.0470000000205,
+    "payload": {
+      "marker_code": 130,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 2,
+      "label": "idle"
+    }
+  },
+  {
+    "name": "cue_idle_on",
+    "sample_index": 63072,
+    "relative_time_sec": 252.0470000000205,
+    "payload": {
+      "marker_code": 133,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 2,
+      "label": "idle"
+    }
+  },
+  {
+    "name": "control_on",
+    "sample_index": 63320,
+    "relative_time_sec": 253.06300000002375,
+    "payload": {
+      "marker_code": 134,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 2,
+      "label": "idle"
+    }
+  },
+  {
+    "name": "control_off",
+    "sample_index": 64572,
+    "relative_time_sec": 258.06300000002375,
+    "payload": {
+      "marker_code": 135,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 2,
+      "label": "idle"
+    }
+  },
+  {
+    "name": "iti_on",
+    "sample_index": 64572,
+    "relative_time_sec": 258.06300000002375,
+    "payload": {
+      "marker_code": 136,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 2,
+      "label": "idle"
+    }
+  },
+  {
+    "name": "fixation_on",
+    "sample_index": 65072,
+    "relative_time_sec": 260.06300000002375,
+    "payload": {
+      "marker_code": 130,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 3,
+      "label": "left"
+    }
+  },
+  {
+    "name": "cue_left_on",
+    "sample_index": 65576,
+    "relative_time_sec": 262.06300000002375,
+    "payload": {
+      "marker_code": 131,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 3,
+      "label": "left"
+    }
+  },
+  {
+    "name": "control_on",
+    "sample_index": 65820,
+    "relative_time_sec": 263.06300000002375,
+    "payload": {
+      "marker_code": 134,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 3,
+      "label": "left"
+    }
+  },
+  {
+    "name": "control_off",
+    "sample_index": 67076,
+    "relative_time_sec": 268.06300000002375,
+    "payload": {
+      "marker_code": 135,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 3,
+      "label": "left"
+    }
+  },
+  {
+    "name": "iti_on",
+    "sample_index": 67076,
+    "relative_time_sec": 268.06300000002375,
+    "payload": {
+      "marker_code": 136,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 3,
+      "label": "left"
+    }
+  },
+  {
+    "name": "fixation_on",
+    "sample_index": 67576,
+    "relative_time_sec": 270.06300000002375,
+    "payload": {
+      "marker_code": 130,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 4,
+      "label": "right"
+    }
+  },
+  {
+    "name": "cue_right_on",
+    "sample_index": 68072,
+    "relative_time_sec": 272.06300000002375,
+    "payload": {
+      "marker_code": 132,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 4,
+      "label": "right"
+    }
+  },
+  {
+    "name": "control_on",
+    "sample_index": 68328,
+    "relative_time_sec": 273.06300000002375,
+    "payload": {
+      "marker_code": 134,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 4,
+      "label": "right"
+    }
+  },
+  {
+    "name": "control_off",
+    "sample_index": 69580,
+    "relative_time_sec": 278.06300000002375,
+    "payload": {
+      "marker_code": 135,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 4,
+      "label": "right"
+    }
+  },
+  {
+    "name": "iti_on",
+    "sample_index": 69580,
+    "relative_time_sec": 278.06300000002375,
+    "payload": {
+      "marker_code": 136,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 4,
+      "label": "right"
+    }
+  },
+  {
+    "name": "fixation_on",
+    "sample_index": 70080,
+    "relative_time_sec": 280.06300000002375,
+    "payload": {
+      "marker_code": 130,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 5,
+      "label": "idle"
+    }
+  },
+  {
+    "name": "cue_idle_on",
+    "sample_index": 70572,
+    "relative_time_sec": 282.06300000002375,
+    "payload": {
+      "marker_code": 133,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 5,
+      "label": "idle"
+    }
+  },
+  {
+    "name": "control_on",
+    "sample_index": 70828,
+    "relative_time_sec": 283.06300000002375,
+    "payload": {
+      "marker_code": 134,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 5,
+      "label": "idle"
+    }
+  },
+  {
+    "name": "control_off",
+    "sample_index": 72084,
+    "relative_time_sec": 288.06300000002375,
+    "payload": {
+      "marker_code": 135,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 5,
+      "label": "idle"
+    }
+  },
+  {
+    "name": "iti_on",
+    "sample_index": 72084,
+    "relative_time_sec": 288.06300000002375,
+    "payload": {
+      "marker_code": 136,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 5,
+      "label": "idle"
+    }
+  },
+  {
+    "name": "fixation_on",
+    "sample_index": 72572,
+    "relative_time_sec": 290.06300000002375,
+    "payload": {
+      "marker_code": 130,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 6,
+      "label": "right"
+    }
+  },
+  {
+    "name": "cue_right_on",
+    "sample_index": 73076,
+    "relative_time_sec": 292.06300000002375,
+    "payload": {
+      "marker_code": 132,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 6,
+      "label": "right"
+    }
+  },
+  {
+    "name": "control_on",
+    "sample_index": 73328,
+    "relative_time_sec": 293.06300000002375,
+    "payload": {
+      "marker_code": 134,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 6,
+      "label": "right"
+    }
+  },
+  {
+    "name": "control_off",
+    "sample_index": 74580,
+    "relative_time_sec": 298.06300000002375,
+    "payload": {
+      "marker_code": 135,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 6,
+      "label": "right"
+    }
+  },
+  {
+    "name": "iti_on",
+    "sample_index": 74580,
+    "relative_time_sec": 298.06300000002375,
+    "payload": {
+      "marker_code": 136,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 6,
+      "label": "right"
+    }
+  },
+  {
+    "name": "fixation_on",
+    "sample_index": 75084,
+    "relative_time_sec": 300.06300000002375,
+    "payload": {
+      "marker_code": 130,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 7,
+      "label": "left"
+    }
+  },
+  {
+    "name": "cue_left_on",
+    "sample_index": 75584,
+    "relative_time_sec": 302.06300000002375,
+    "payload": {
+      "marker_code": 131,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 7,
+      "label": "left"
+    }
+  },
+  {
+    "name": "control_on",
+    "sample_index": 75828,
+    "relative_time_sec": 303.06300000002375,
+    "payload": {
+      "marker_code": 134,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 7,
+      "label": "left"
+    }
+  },
+  {
+    "name": "control_off",
+    "sample_index": 77080,
+    "relative_time_sec": 308.06300000002375,
+    "payload": {
+      "marker_code": 135,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 7,
+      "label": "left"
+    }
+  },
+  {
+    "name": "iti_on",
+    "sample_index": 77080,
+    "relative_time_sec": 308.06300000002375,
+    "payload": {
+      "marker_code": 136,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 7,
+      "label": "left"
+    }
+  },
+  {
+    "name": "fixation_on",
+    "sample_index": 77580,
+    "relative_time_sec": 310.06300000002375,
+    "payload": {
+      "marker_code": 130,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 8,
+      "label": "idle"
+    }
+  },
+  {
+    "name": "cue_idle_on",
+    "sample_index": 78080,
+    "relative_time_sec": 312.06300000002375,
+    "payload": {
+      "marker_code": 133,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 8,
+      "label": "idle"
+    }
+  },
+  {
+    "name": "control_on",
+    "sample_index": 78340,
+    "relative_time_sec": 313.06300000002375,
+    "payload": {
+      "marker_code": 134,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 8,
+      "label": "idle"
+    }
+  },
+  {
+    "name": "control_off",
+    "sample_index": 79588,
+    "relative_time_sec": 318.06300000002375,
+    "payload": {
+      "marker_code": 135,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 8,
+      "label": "idle"
+    }
+  },
+  {
+    "name": "iti_on",
+    "sample_index": 79588,
+    "relative_time_sec": 318.06300000002375,
+    "payload": {
+      "marker_code": 136,
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 8,
+      "label": "idle"
+    }
+  },
+  {
+    "name": "block_end",
+    "sample_index": 80080,
+    "relative_time_sec": 320.06300000002375,
+    "payload": {
+      "marker_code": 121,
+      "phase": "formal",
+      "block_index": 0
+    }
+  },
+  {
+    "name": "session_end",
+    "sample_index": 80080,
+    "relative_time_sec": 320.06300000002375,
+    "payload": {
+      "marker_code": 102,
+      "phase": "session"
+    }
+  }
+]

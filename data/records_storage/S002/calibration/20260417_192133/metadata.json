@@ -1,0 +1,294 @@
+{
+  "session_id": "20260417_192133",
+  "protocol_name": "mi_game_control_data_collection_protocol_v1",
+  "subject_mode": "new",
+  "sfreq": 250.0,
+  "n_channels": 32,
+  "window_sec": 2.0,
+  "stride_sec": 0.5,
+  "control_window_range_sec": [
+    0.5,
+    4.5
+  ],
+  "trial_timing": {
+    "fixation_sec": 2.0,
+    "cue_sec": 1.0,
+    "control_sec": 5.0,
+    "iti_sec": 2.0
+  },
+  "label_map": {
+    "left": 0,
+    "right": 1,
+    "idle": 2
+  },
+  "trials": [
+    {
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 0,
+      "label": "right",
+      "label_id": 1,
+      "control_on_sample": 58317,
+      "control_off_sample": 59561
+    },
+    {
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 1,
+      "label": "left",
+      "label_id": 0,
+      "control_on_sample": 60809,
+      "control_off_sample": 62065
+    },
+    {
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 2,
+      "label": "idle",
+      "label_id": 2,
+      "control_on_sample": 63313,
+      "control_off_sample": 64565
+    },
+    {
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 3,
+      "label": "left",
+      "label_id": 0,
+      "control_on_sample": 65825,
+      "control_off_sample": 67073
+    },
+    {
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 4,
+      "label": "right",
+      "label_id": 1,
+      "control_on_sample": 68317,
+      "control_off_sample": 69569
+    },
+    {
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 5,
+      "label": "idle",
+      "label_id": 2,
+      "control_on_sample": 70825,
+      "control_off_sample": 72077
+    },
+    {
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 6,
+      "label": "right",
+      "label_id": 1,
+      "control_on_sample": 73329,
+      "control_off_sample": 74585
+    },
+    {
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 7,
+      "label": "left",
+      "label_id": 0,
+      "control_on_sample": 75837,
+      "control_off_sample": 77097
+    },
+    {
+      "phase": "formal",
+      "block_index": 0,
+      "trial_index": 8,
+      "label": "idle",
+      "label_id": 2,
+      "control_on_sample": 78349,
+      "control_off_sample": 79589
+    },
+    {
+      "phase": "formal",
+      "block_index": 1,
+      "trial_index": 0,
+      "label": "idle",
+      "label_id": 2,
+      "control_on_sample": 81601,
+      "control_off_sample": 82849
+    },
+    {
+      "phase": "formal",
+      "block_index": 1,
+      "trial_index": 1,
+      "label": "left",
+      "label_id": 0,
+      "control_on_sample": 84097,
+      "control_off_sample": 85353
+    },
+    {
+      "phase": "formal",
+      "block_index": 1,
+      "trial_index": 2,
+      "label": "right",
+      "label_id": 1,
+      "control_on_sample": 86609,
+      "control_off_sample": 87857
+    },
+    {
+      "phase": "formal",
+      "block_index": 1,
+      "trial_index": 3,
+      "label": "idle",
+      "label_id": 2,
+      "control_on_sample": 89109,
+      "control_off_sample": 90361
+    },
+    {
+      "phase": "formal",
+      "block_index": 1,
+      "trial_index": 4,
+      "label": "left",
+      "label_id": 0,
+      "control_on_sample": 91609,
+      "control_off_sample": 92857
+    },
+    {
+      "phase": "formal",
+      "block_index": 1,
+      "trial_index": 5,
+      "label": "right",
+      "label_id": 1,
+      "control_on_sample": 94121,
+      "control_off_sample": 95365
+    },
+    {
+      "phase": "formal",
+      "block_index": 1,
+      "trial_index": 6,
+      "label": "left",
+      "label_id": 0,
+      "control_on_sample": 96621,
+      "control_off_sample": 97869
+    },
+    {
+      "phase": "formal",
+      "block_index": 1,
+      "trial_index": 7,
+      "label": "right",
+      "label_id": 1,
+      "control_on_sample": 99125,
+      "control_off_sample": 100373
+    },
+    {
+      "phase": "formal",
+      "block_index": 1,
+      "trial_index": 8,
+      "label": "idle",
+      "label_id": 2,
+      "control_on_sample": 101625,
+      "control_off_sample": 102881
+    },
+    {
+      "phase": "formal",
+      "block_index": 2,
+      "trial_index": 0,
+      "label": "left",
+      "label_id": 0,
+      "control_on_sample": 104877,
+      "control_off_sample": 106137
+    },
+    {
+      "phase": "formal",
+      "block_index": 2,
+      "trial_index": 1,
+      "label": "right",
+      "label_id": 1,
+      "control_on_sample": 107393,
+      "control_off_sample": 108645
+    },
+    {
+      "phase": "formal",
+      "block_index": 2,
+      "trial_index": 2,
+      "label": "idle",
+      "label_id": 2,
+      "control_on_sample": 109897,
+      "control_off_sample": 111149
+    },
+    {
+      "phase": "formal",
+      "block_index": 2,
+      "trial_index": 3,
+      "label": "right",
+      "label_id": 1,
+      "control_on_sample": 112389,
+      "control_off_sample": 113649
+    },
+    {
+      "phase": "formal",
+      "block_index": 2,
+      "trial_index": 4,
+      "label": "idle",
+      "label_id": 2,
+      "control_on_sample": 114893,
+      "control_off_sample": 116153
+    },
+    {
+      "phase": "formal",
+      "block_index": 2,
+      "trial_index": 5,
+      "label": "left",
+      "label_id": 0,
+      "control_on_sample": 117397,
+      "control_off_sample": 118653
+    },
+    {
+      "phase": "formal",
+      "block_index": 2,
+      "trial_index": 6,
+      "label": "left",
+      "label_id": 0,
+      "control_on_sample": 119905,
+      "control_off_sample": 121149
+    },
+    {
+      "phase": "formal",
+      "block_index": 2,
+      "trial_index": 7,
+      "label": "idle",
+      "label_id": 2,
+      "control_on_sample": 122405,
+      "control_off_sample": 123657
+    },
+    {
+      "phase": "formal",
+      "block_index": 2,
+      "trial_index": 8,
+      "label": "right",
+      "label_id": 1,
+      "control_on_sample": 124909,
+      "control_off_sample": 126165
+    }
+  ],
+  "baseline_segments": [
+    {
+      "name": "eyes_open_fixation",
+      "duration_sec": 60.0,
+      "instruction": "睁眼注视中央十字，保持放松。"
+    },
+    {
+      "name": "game_view_idle",
+      "duration_sec": 60.0,
+      "instruction": "观看游戏界面但不控制，不做动作想象。"
+    },
+    {
+      "name": "idle_fixation",
+      "duration_sec": 60.0,
+      "instruction": "注视中央十字，不做任何动作想象。"
+    }
+  ],
+  "bad_trials": [],
+  "low_quality_blocks": [],
+  "model_path": "models_storage\\S002\\brainco\\eegnet.pt",
+  "windows_collected": 135,
+  "metrics": {
+    "val_loss": 0.7839851975440979,
+    "val_acc": 0.6666666865348816
+  }
+}

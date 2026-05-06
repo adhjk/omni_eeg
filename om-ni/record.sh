@@ -24,7 +24,7 @@
 
 ## 1. 启动 Web 可视化GUI（必开，所有操作都在网页里）
 ```bash
-streamlit run web_gui.py
+streamlit run gui.py
 ```
 打开浏览器访问本地网页，所有参数、开始实验全部在页面点按钮操作。
 
