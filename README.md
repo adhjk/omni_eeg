@@ -45,7 +45,7 @@ oi-mi/
 cd om-ni
 conda create -n omni python=3.12 -y
 conda activate omni
-pip install -e . --no-build-isolation
+pip install -e .
 ```
 
 安装后可直接使用：
