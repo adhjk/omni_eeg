@@ -1,46 +1,46 @@
-subject_id: S001
+subject_id: S002
 model_name: eegnet
 device_type: brainco
-hardware_dummy_mode: false #added
-task_mode: motor
+hardware_dummy_mode: true
+task_mode: visual
 sfreq: 250
 n_classes: 3
-window_sec: 2.0
+window_sec: 1.0        # 缩小窗口，避免切不出来
 step_sec: 0.5
 confidence_threshold: 0.7
-mc_dropout_passes: 8
-new_subject_duration_sec: 1800
-old_subject_duration_sec: 300
-new_subject_epochs: 150
+mc_dropout_passes: 1
+new_subject_duration_sec: 60
+old_subject_duration_sec: 30
+new_subject_epochs: 5
 old_subject_epochs: 5
 batch_size: 32
-learning_rate: 0.003
-early_stopping_patience: 40
-collect_block_sec: 10
-buffer_sec: 60
+learning_rate: 0.001
+early_stopping_patience: 10
+collect_block_sec: 5
+buffer_sec: 10
 protocol:
-  control_start_offset_sec: 0.5
-  control_stop_offset_sec: 4.5
-  export_window_sec: 1.5
+  control_start_offset_sec: 0.2
+  control_stop_offset_sec: 1.8   # 扩大有效区间
+  export_window_sec: 1.0
   export_stride_sec: 0.5
   practice_labels: []
   practice_repetitions: 0
   baseline_segments:
   - name: eyes_open_fixation
-    duration_sec: 60.0
+    duration_sec: 3.0
     instruction: 睁眼注视中央十字，保持放松。
   trial_timing:
-    fixation_sec: 2.0
-    cue_sec: 1.0
-    control_sec: 5.0
-    iti_sec: 2.0
-  new_subject_blocks: 6
-  new_subject_trials_per_class_per_block: 8
-  old_subject_baseline_sec: 60.0
-  old_subject_trials_per_class: 8
-  rest_between_blocks_sec: 35.0
-  extra_rest_sec: 60.0
-  dynamic_total_minutes_hint: 30.0
+    fixation_sec: 0.5
+    cue_sec: 0.5
+    control_sec: 2.0           # 保持 2s 不动
+    iti_sec: 0.5
+  new_subject_blocks: 1
+  new_subject_trials_per_class_per_block: 4
+  old_subject_baseline_sec: 10.0
+  old_subject_trials_per_class: 2
+  rest_between_blocks_sec: 2.0
+  extra_rest_sec: 2.0
+  dynamic_total_minutes_hint: 1.0
   random_seed: 17
 device:
   neuracle_host: 127.0.0.1
@@ -56,6 +56,7 @@ device:
   brainco_device_id: eeg-cap
   trigger_serial_port: ''
 output:
+  enabled: false               # 关闭 LSL，避免 pylsl 报错
   command_stream_name: oi_mi_commands
   command_stream_type: Markers
   ar_game:
