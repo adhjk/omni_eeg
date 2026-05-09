@@ -1,0 +1,9 @@
+model_path: models_storage/S001/brainco/riemann-mdm.pkl
+windows_collected: 6
+head_only: false
+sfreq: 250.0
+window_sec: 1.0
+step_sec: 0.5
+metrics:
+  val_loss: 0.0
+  val_acc: 1.0
