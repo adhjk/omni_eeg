@@ -58,3 +58,20 @@ def load_task(task_mode: str) -> Task:
 
 def load_task_from_config(config: dict[str, Any]) -> Task:
     return load_task(resolve_task_mode(config))
+
+
+def load_streamlit_renderer(config: dict[str, Any]):
+    """
+    尝试加载当前 task_mode 对应的独立 Streamlit UI 渲染函数。
+    若任务模块定义了 get_streamlit_renderer()，则返回其返回值；
+    否则返回 None。
+    """
+    mode = resolve_task_mode(config)
+    try:
+        module = importlib.import_module(f"tasks.task_{mode}")
+    except ModuleNotFoundError:
+        return None
+    renderer_getter = getattr(module, "get_streamlit_renderer", None)
+    if renderer_getter is None:
+        return None
+    return renderer_getter()

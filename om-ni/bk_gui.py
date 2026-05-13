@@ -1,10 +1,13 @@
+"""Streamlit web interface for oi-mi."""
+
 from __future__ import annotations
 
+import argparse
 import re
+import sys
 import threading
 import time
 from pathlib import Path
-from typing import Any
 
 import streamlit as st
 
@@ -16,20 +19,26 @@ from cli import (
     build_game_command_outlet,
     build_marker_backend,
     build_model_path,
+    load_config as load_app_config,
+    resolve_config_path,
     write_config,
 )
 from decoder.real_time_decoder import RealTimeDecoder, TEST_MODE_PROMPTS
 from models.factory import ModelFactory
 from tasks.task_factory import load_task_from_config
+from tasks.task_visual import render_visual_ui
 from utils.markers import LSLCommandOutlet
 
-# ---------- 资产路径（基于本文件所在 tasks/ 目录的父目录） ----------
-_MOTOR_ROOT = Path(__file__).resolve().parent.parent
+_GUI_ROOT = Path(__file__).resolve().parent
+_PAGE_ICON_FILENAME = "OMNI_ICON.svg"
 _LOGO_FILENAME = "OMNI_LOGO_ENG_double_line.svg"
 
+
 def _resolve_asset_path(filename: str) -> Path | None:
+    """Resolve asset path across source and installed-package launch modes."""
+
     candidates = (
-        _MOTOR_ROOT / "assets" / filename,
+        _GUI_ROOT / "assets" / filename,
         Path.cwd() / "assets" / filename,
         Path.cwd() / "oi-mi" / "assets" / filename,
     )
@@ -38,23 +47,25 @@ def _resolve_asset_path(filename: str) -> Path | None:
             return candidate
     return None
 
-def _resolve_logo_svg_path() -> Path | None:
-    return _resolve_asset_path(_LOGO_FILENAME)
 
-# ---------- 全局配置路径（由 render_motor_gui 注入） ----------
-_current_config_path: Path | None = None
+_PAGE_ICON_PATH = _resolve_asset_path(_PAGE_ICON_FILENAME)
+st.set_page_config(
+    page_title="oi-mi Control Panel",
+    page_icon=str(_PAGE_ICON_PATH) if _PAGE_ICON_PATH is not None else None,
+    layout="wide",
+)
 
-def _save_config(cfg: dict) -> None:
-    """保存配置到当前 config_path，供页面调用。"""
-    if _current_config_path is None:
-        st.error("无法保存：未获取到配置文件路径。")
-        return
-    try:
-        write_config(_current_config_path, cfg)
-    except Exception as exc:
-        st.error(f"保存配置文件失败: {exc}")
 
-# ---------- 提示符号与事件解析 ----------
+def parse_config_path(argv: list[str] | None = None) -> Path:
+    """Parse the optional config path passed after `streamlit run ... --`."""
+
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("--config", dest="config_path", type=Path, default=None)
+    args, _ = parser.parse_known_args(argv)
+    return resolve_config_path(args.config_path)
+
+
+CONFIG_PATH = parse_config_path(sys.argv[1:])
 PROMPT_TEXTS = tuple(LABEL_DISPLAY.values()) + tuple(TEST_MODE_PROMPTS.values())
 
 _DISPLAY_SYMBOLS = {
@@ -67,6 +78,7 @@ _DISPLAY_SYMBOLS = {
     "DONE": "✓",
     "ERROR": "✕",
 }
+
 
 def _resolve_cue_symbol(message: str, *, event_type: str) -> tuple[str, bool] | None:
     upper_message = message.upper()
@@ -90,7 +102,27 @@ def _resolve_cue_symbol(message: str, *, event_type: str) -> tuple[str, bool] | 
 
 SIDEBAR_NAV_PAGES = ("首页", "设置", "连通检测", "校准", "测试模式", "实时解码")
 
-# ---------- StreamlitConsole 与 live view ----------
+
+def _resolve_logo_svg_path() -> Path | None:
+    """Resolve sidebar logo path."""
+    return _resolve_asset_path(_LOGO_FILENAME)
+
+
+def load_config() -> dict:
+    try:
+        return load_app_config(CONFIG_PATH)
+    except Exception as exc:  # noqa: BLE001
+        st.error(f"加载配置文件失败: {exc}")
+        return {}
+
+
+def save_config(cfg: dict) -> None:
+    try:
+        write_config(CONFIG_PATH, cfg)
+    except Exception as exc:  # noqa: BLE001
+        st.error(f"保存配置文件失败: {exc}")
+
+
 class StreamlitConsole:
     """Minimal Rich Console substitute that writes into Streamlit placeholders."""
 
@@ -164,7 +196,10 @@ class StreamlitConsole:
             unsafe_allow_html=True,
         )
 
+
 def init_live_view() -> tuple[StreamlitConsole, callable]:
+    """Create cue/log placeholders for a running EEG page."""
+
     cue_box = st.empty()
     log_box = st.empty()
     console = StreamlitConsole(cue_box, log_box)
@@ -176,7 +211,7 @@ def init_live_view() -> tuple[StreamlitConsole, callable]:
     refresh()
     return console, refresh
 
-# ---------- 页面渲染函数 ----------
+
 def render_home() -> None:
     st.title("Omni-Intelligence® 脑机接口系统")
     st.markdown(
@@ -202,6 +237,8 @@ def render_home() -> None:
         本次实验由 NCCLab 提供。
         """
     )
+
+
 
 def render_settings(config: dict) -> None:
     st.title("核心参数配置")
@@ -384,8 +421,9 @@ def render_settings(config: dict) -> None:
             "port": ar_game_port,
             "timeout_sec": ar_game_timeout_sec,
         }
-        _save_config(config)
+        save_config(config)
         st.success("配置已保存。")
+
 
 def render_probe(config: dict) -> None:
     st.title("连通检测")
@@ -410,8 +448,9 @@ def render_probe(config: dict) -> None:
                 col2.metric("Mean (uV)", f"{window.mean():.3f}")
                 col3.metric("Std (uV)", f"{window.std():.3f}")
                 col4.metric("Max Abs (uV)", f"{abs(window).max():.3f}")
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 st.error(f"连通失败: {exc}")
+
 
 def render_calibration(config: dict) -> None:
     st.title("被试校准")
@@ -489,8 +528,9 @@ def render_calibration(config: dict) -> None:
                 st.write(f"- 校准数据保存位置: `{result.calibration_data_path}`")
             if result.session_dir is not None:
                 st.write(f"- session 保存位置: `{result.session_dir}`")
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             st.error(f"执行失败: {exc}")
+
 
 def render_test_mode(config: dict) -> None:
     st.title("Cue 测试模式")
@@ -561,8 +601,9 @@ def render_test_mode(config: dict) -> None:
             st.write(f"- 记录的窗口数: **{result['windows']}**")
             st.write(f"- 准确率: **{result['accuracy']:.3f}**")
             st.write(f"- 有效准确率: **{result['valid_accuracy']:.3f}**")
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             st.error(f"执行失败: {exc}")
+
 
 def render_realtime(config: dict) -> None:
     st.title("实时解码")
@@ -624,17 +665,19 @@ def render_realtime(config: dict) -> None:
                     / "realtime",
                     heartbeat=refresh,
                 )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             st.warning(f"解码已停止: {exc}")
 
-# ---------- 导航与样式 ----------
+
 def _set_gui_nav_mode(page: str) -> None:
     st.session_state.gui_nav_mode = page
+
 
 def _inject_gui_nav_styles() -> None:
     st.markdown(
         """
         <style>
+        /* Force a light palette so dark-text logo remains readable. */
         .stApp,
         [data-testid="stAppViewContainer"],
         [data-testid="stMainBlockContainer"] {
@@ -698,11 +741,11 @@ def _inject_gui_nav_styles() -> None:
         unsafe_allow_html=True,
     )
 
-# ---------- 主渲染入口 ----------
-def render_motor_gui(config: dict, config_path: Path) -> None:
-    """Motor 任务完整界面（原 gui.main 逻辑）"""
-    global _current_config_path
-    _current_config_path = config_path
+
+def main() -> None:
+    config = load_config()
+    if not config:
+        return
 
     _inject_gui_nav_styles()
     st.session_state.setdefault("gui_nav_mode", SIDEBAR_NAV_PAGES[0])
@@ -737,15 +780,6 @@ def render_motor_gui(config: dict, config_path: Path) -> None:
     elif mode == "实时解码":
         render_realtime(config)
 
-# ---------- 任务工厂接口 ----------
-def get_streamlit_renderer():
-    """返回 motor 任务的 Streamlit 渲染器，供 task_factory 调用"""
-    return render_motor_gui
 
-# ---------- 原有 Task 包装类（保持不变） ----------
-class Task:
-    def wrap_console(self, console: Any) -> Any:
-        return console
-
-    def wrap_marker_backend(self, backend: Any) -> Any:
-        return backend
+if __name__ == "__main__":
+    main()

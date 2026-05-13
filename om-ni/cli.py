@@ -29,6 +29,7 @@ from utils.markers import (
 )
 from utils.preprocessing import filter_and_transform
 from tasks.task_factory import load_task_from_config
+from tasks.task_factory import resolve_task_mode
 from web_command_server import start_web_command_server
 
 LOGGER = logging.getLogger(__name__)
@@ -186,13 +187,37 @@ def get_model_factory() -> Any:
     return ModelFactory
 
 
-def get_calibrator_class() -> Any:
+def get_calibrator_class(config: dict[str, Any]) -> Any:
+    mode = resolve_task_mode(config)
+    if mode != "motor":
+        try:
+            module = importlib.import_module(f"tasks.task_{mode}")
+        except ModuleNotFoundError:
+            module = None
+        if module is not None:
+            getter = getattr(module, "get_calibrator_class", None)
+            if getter is not None:
+                resolved = getter()
+                if resolved is not None:
+                    return resolved
     from adaptation.calibrator import Calibrator
 
     return Calibrator
 
 
-def get_realtime_decoder_class() -> Any:
+def get_realtime_decoder_class(config: dict[str, Any]) -> Any:
+    mode = resolve_task_mode(config)
+    if mode != "motor":
+        try:
+            module = importlib.import_module(f"tasks.task_{mode}")
+        except ModuleNotFoundError:
+            module = None
+        if module is not None:
+            getter = getattr(module, "get_realtime_decoder_class", None)
+            if getter is not None:
+                resolved = getter()
+                if resolved is not None:
+                    return resolved
     from decoder.real_time_decoder import RealTimeDecoder
 
     return RealTimeDecoder
@@ -231,8 +256,13 @@ def load_config(path: Path) -> dict[str, Any]:
         raise click.ClickException(f"Missing required config keys: {', '.join(missing)}")
     if config["window_sec"] <= 0 or config["step_sec"] <= 0:
         raise click.ClickException("window_sec and step_sec must be positive.")
-    if config["n_classes"] != 3:
-        raise click.ClickException("This minimal build currently requires n_classes=3.")
+    mode = resolve_task_mode(config)
+    if mode == "motor":
+        if int(config["n_classes"]) != 3:
+            raise click.ClickException("task_mode=motor requires n_classes=3.")
+    elif mode == "visual":
+        if int(config["n_classes"]) != 11:
+            raise click.ClickException("task_mode=visual requires n_classes=11 (10 images + rest).")
     return config
 
 
@@ -997,7 +1027,7 @@ def calibrate(
         n_classes=int(config["n_classes"]),
         n_times=int(float(config["sfreq"]) * float(config["window_sec"])),
     )
-    calibrator_class = get_calibrator_class()
+    calibrator_class = get_calibrator_class(config)
     calibrator = calibrator_class(
         acquirer=acquirer,
         model=model,
@@ -1086,7 +1116,7 @@ def run(
         stream_type=str(config["output"]["command_stream_type"]),
     )
     game_command_outlet = build_game_command_outlet(config)
-    realtime_decoder_class = get_realtime_decoder_class()
+    realtime_decoder_class = get_realtime_decoder_class(config)
     decoder = realtime_decoder_class(
         acquirer=acquirer,
         model=model,
