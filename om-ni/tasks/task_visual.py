@@ -668,28 +668,51 @@ class VisualRealTimeDecoder:
         return {"windows": len(true_labels), "accuracy": accuracy, "valid_accuracy": valid_accuracy}
 
     def _decode_loop(self) -> None:
+        consecutive_failures = 0
         while not self._stop_event.is_set():
             started_at = time.perf_counter()
             try:
                 eeg, _ = self._acquirer.get_chunk(self._window_sec)
-                processed = filter_and_transform(eeg, sfreq=self._sfreq)
-                probabilities = self._model.predict_proba(processed[None, ...], mc_dropout_passes=self._mc_dropout_passes)[0]
-                result = self._post_process(probabilities)
-                self._console.print(
-                    f"[green][预测][/green] {result.label} "
-                    f"(confidence: {result.confidence:.2f}, uncertainty: {result.uncertainty:.2f})"
-                )
-                self._command_outlet.push(result.label)
-                if hasattr(self, "_record") and self._record and hasattr(self, "_writer"):
-                    pred_class = -1 if result.class_id is None else int(result.class_id)
-                    self._writer.put(window=eeg.astype(np.float32), y_true=-1, y_pred=pred_class, confidence=float(result.confidence))
+                consecutive_failures = 0  # 成功获取，重置失败计数
             except Exception as exc:
-                self._fatal_exc = exc
-                self._stop_event.set()
-                self._console.print(f"[red]解码失败：{exc}[/red]")
-            elapsed = time.perf_counter() - started_at
-            self._sleep_with_heartbeat(max(0.0, self._step_sec - elapsed), None)
+                consecutive_failures += 1
+                self._console.print(f"[red]采集失败：{exc}[/red]")
+                if consecutive_failures >= 5:
+                    self._fatal_exc = exc
+                    self._stop_event.set()
+                    self._console.print(f"[red]连续 {consecutive_failures} 次采集失败，停止解码[/red]")
+                    return
+                # 等待一小段时间再重试，避免忙等
+                wait = min(0.5, max(self._step_sec, 0.1))
+                time.sleep(wait)
+                continue
 
+            # 正常处理采集到的数据
+            processed = filter_and_transform(eeg, sfreq=self._sfreq)
+            probabilities = self._model.predict_proba(
+                processed[None, ...], mc_dropout_passes=self._mc_dropout_passes
+            )[0]
+            result = self._post_process(probabilities)
+            self._console.print(
+                f"[green][预测][/green] {result.label} "
+                f"(confidence: {result.confidence:.2f}, uncertainty: {result.uncertainty:.2f})"
+            )
+            self._command_outlet.push(result.label)
+
+            if hasattr(self, "_record") and self._record and hasattr(self, "_writer"):
+                pred_class = -1 if result.class_id is None else int(result.class_id)
+                self._writer.put(
+                    window=eeg.astype(np.float32),
+                    y_true=-1,
+                    y_pred=pred_class,
+                    confidence=float(result.confidence),
+                )
+
+            elapsed = time.perf_counter() - started_at
+            sleep_dur = max(0.0, self._step_sec - elapsed)
+            if sleep_dur > 0:
+                time.sleep(sleep_dur)
+                
     def _post_process(self, probabilities: np.ndarray) -> PredictionResult:
         best_index = int(np.argmax(probabilities))
         confidence = float(probabilities[best_index])
