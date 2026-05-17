@@ -1117,6 +1117,15 @@ def run(
     )
     game_command_outlet = build_game_command_outlet(config)
     realtime_decoder_class = get_realtime_decoder_class(config)
+    decoder_extra_kwargs: dict[str, Any] = {}
+    if resolve_task_mode(config) == "visual":
+        from tasks.visual_stimuli import visual_label_names, visual_test_mode_prompts
+
+        fallback_image_path = Path(__file__).with_name("assets") / "EEG.png"
+        decoder_extra_kwargs = {
+            "label_names": visual_label_names(config, fallback_image_path=fallback_image_path),
+            "test_mode_prompts": visual_test_mode_prompts(config, fallback_image_path=fallback_image_path),
+        }
     decoder = realtime_decoder_class(
         acquirer=acquirer,
         model=model,
@@ -1128,6 +1137,7 @@ def run(
         step_sec=float(config["step_sec"]),
         confidence_threshold=float(config["confidence_threshold"]),
         mc_dropout_passes=int(config["mc_dropout_passes"]),
+        **decoder_extra_kwargs,
     )
     if test_mode:
         marker_backend = task.wrap_marker_backend(build_marker_backend(config))

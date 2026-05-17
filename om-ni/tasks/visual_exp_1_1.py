@@ -12,11 +12,11 @@ from adaptation.passive_visual_protocol import EVENT_CODES as PASSIVE_EVENT_CODE
 from adaptation.passive_visual_protocol import PassiveVisualTiming, build_passive_image_order
 from adaptation.calibrator import CalibrationResult
 from adaptation.session_recorder import SessionRecorder
-from tasks.visual_window import SelectionItem, VisualStimulusWindow
+from tasks.visual_stimuli import REST_CLASS_ID, load_visual_stimuli
+from tasks.visual_window import VisualStimulusWindow
 from utils.preprocessing import filter_and_transform
 
-_VISUAL_REST_CLASS_ID = 10
-_VISUAL_LABEL_NAMES = {idx: f"图片{idx + 1}" for idx in range(10)} | {_VISUAL_REST_CLASS_ID: "静息"}
+_VISUAL_REST_CLASS_ID = REST_CLASS_ID
 
 
 @dataclass(slots=True)
@@ -84,6 +84,8 @@ def run(
     timing = PassiveVisualTiming()
     blocks = int(config.get("protocol", {}).get("visual_blocks", 1))
     seed = int(config.get("protocol", {}).get("random_seed", 17))
+    stimuli = load_visual_stimuli(config, fallback_image_path=stimulus_image_path)
+    label_names = {idx: stimulus.display_name for idx, stimulus in stimuli.items()} | {_VISUAL_REST_CLASS_ID: "静息"}
 
     window = VisualStimulusWindow(title="OI-MI", default_image_path=stimulus_image_path)
     window.start()
@@ -128,10 +130,21 @@ def run(
             if block_index > 0:
                 pause_between_blocks(block_index)
 
-            order = build_passive_image_order(seed=seed + block_index, n_images=10)
+            order = build_passive_image_order(seed=seed + block_index, n_images=len(stimuli))
             for trial_index, image_id in enumerate(order):
+                stimulus = stimuli[int(image_id)]
                 global_trial = block_index * 10 + int(trial_index)
-                emit_event("trial_start", int(PASSIVE_EVENT_CODES["TRIAL_START"]), exp="1.1", block=block_index, trial=global_trial, image_id=int(image_id))
+                emit_event(
+                    "trial_start",
+                    int(PASSIVE_EVENT_CODES["TRIAL_START"]),
+                    exp="1.1",
+                    block=block_index,
+                    trial=global_trial,
+                    image_id=int(image_id),
+                    stimulus_label=stimulus.label,
+                    stimulus_text=stimulus.text,
+                    stimulus_image=str(stimulus.image_path),
+                )
 
                 window.show_black("Baseline", "1s")
                 console.print("[bold yellow]Baseline[/bold yellow] 1s")
@@ -144,8 +157,17 @@ def run(
                 baseline_end = int(recorder.sample_count)
                 segments.append(VisualSegment(_VISUAL_REST_CLASS_ID, baseline_start, baseline_end, "exp_1_1_baseline"))
 
-                window.show_image(f"图片{int(image_id) + 1}", "记忆 1.5s")
-                emit_event("image_show", int(PASSIVE_EVENT_CODES["IMAGE_SHOW"]), exp="1.1", block=block_index, trial=global_trial, image_id=int(image_id))
+                window.show_image(f"图片{int(image_id) + 1}", "记忆 1.5s", image_path=stimulus.image_path)
+                emit_event(
+                    "image_show",
+                    int(PASSIVE_EVENT_CODES["IMAGE_SHOW"]),
+                    exp="1.1",
+                    block=block_index,
+                    trial=global_trial,
+                    image_id=int(image_id),
+                    stimulus_label=stimulus.label,
+                    stimulus_text=stimulus.text,
+                )
                 sleep_with_recording(timing.image_show_sec)
 
                 window.show_image("马赛克", "0.5s")
@@ -169,7 +191,18 @@ def run(
                 sleep_with_recording(timing.iti_sec)
 
                 emit_event("trial_end", int(PASSIVE_EVENT_CODES["TRIAL_END"]), exp="1.1", block=block_index, trial=global_trial, image_id=int(image_id))
-                trials.append({"exp": "1.1", "block": int(block_index), "trial_index": int(global_trial), "image_id": int(image_id), "label_id": int(image_id)})
+                trials.append(
+                    {
+                        "exp": "1.1",
+                        "block": int(block_index),
+                        "trial_index": int(global_trial),
+                        "image_id": int(image_id),
+                        "label_id": int(image_id),
+                        "stimulus_label": stimulus.label,
+                        "stimulus_text": stimulus.text,
+                        "stimulus_image": str(stimulus.image_path),
+                    }
+                )
 
         emit_event("session_end", int(PASSIVE_EVENT_CODES["SESSION_END"]), exp="1.1")
         acquirer.stop_stream()
@@ -180,14 +213,23 @@ def run(
             "sfreq": float(config["sfreq"]),
             "window_sec": float(config["window_sec"]),
             "step_sec": float(config["step_sec"]),
-            "label_names": {str(k): v for k, v in _VISUAL_LABEL_NAMES.items()},
+            "label_names": {str(k): v for k, v in label_names.items()},
+            "stimuli": [
+                {
+                    "id": int(stimulus.item_id),
+                    "label": stimulus.label,
+                    "text": stimulus.text,
+                    "image": str(stimulus.image_path),
+                }
+                for stimulus in stimuli.values()
+            ],
             "event_codes": dict(PASSIVE_EVENT_CODES),
             "trials": trials,
             "segments": [
                 {
                     "name": seg.name,
                     "label_id": int(seg.label_id),
-                    "label_name": _VISUAL_LABEL_NAMES.get(int(seg.label_id), str(seg.label_id)),
+                    "label_name": label_names.get(int(seg.label_id), str(seg.label_id)),
                     "start_sample": int(seg.start_sample),
                     "end_sample": int(seg.end_sample),
                 }

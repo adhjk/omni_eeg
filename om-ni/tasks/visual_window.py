@@ -21,6 +21,12 @@ class SelectionItem:
     image_path: Path
 
 
+@dataclass(slots=True)
+class TextSelectionItem:
+    item_id: int
+    title: str
+
+
 class VisualStimulusWindow:
     _instance = None
     _initialized = False
@@ -112,9 +118,17 @@ class VisualStimulusWindow:
         debug_log(f"show_image: title={title}, subtitle={subtitle}, path={path}")
         self._queue.put(("state", {"title": str(title), "subtitle": str(subtitle), "mode": "image", "image_path": path}))
 
+    def show_text(self, title: str, text: str, subtitle: str = "") -> None:
+        debug_log(f"show_text: title={title}, text={text}, subtitle={subtitle}")
+        self._queue.put(("state", {"title": str(title), "subtitle": str(subtitle), "mode": "text", "text": str(text)}))
+
     def show_selection(self, title: str, subtitle: str, items: list[SelectionItem]) -> None:
         debug_log(f"show_selection: title={title}, items count={len(items)}")
         self._queue.put(("selection", {"title": str(title), "subtitle": str(subtitle), "items": list(items)}))
+
+    def show_text_selection(self, title: str, subtitle: str, items: list[TextSelectionItem]) -> None:
+        debug_log(f"show_text_selection: title={title}, items count={len(items)}")
+        self._queue.put(("text_selection", {"title": str(title), "subtitle": str(subtitle), "items": list(items)}))
 
     def poll_selection(self) -> int | None:
         try:
@@ -165,19 +179,34 @@ class VisualStimulusWindow:
             subtitle_label.pack(fill="x", pady=(0, 18))
 
             image_label = tk.Label(frame, bg="#000000")
+            text_label = tk.Label(
+                frame,
+                font=("Arial", 84, "bold"),
+                bg="#000000",
+                fg="#ffffff",
+                justify="center",
+                wraplength=1100,
+            )
             selection_frame = tk.Frame(frame, bg="#000000")
 
-            photo_cache: dict[str, Any] = {}
+            photo_cache: dict[tuple[str, tuple[int, int] | None], Any] = {}
 
-            def load_photo(path: Path) -> Any:
+            def load_photo(path: Path, *, max_size: tuple[int, int] | None = None) -> Any:
                 key = str(path)
+                cache_key = (key, max_size)
                 debug_log(f"load_photo: {key}")
-                if key in photo_cache:
+                if cache_key in photo_cache:
                     debug_log(f"使用缓存的图片: {key}")
-                    return photo_cache[key]
+                    return photo_cache[cache_key]
                 try:
-                    photo = tk.PhotoImage(file=key)
-                    photo_cache[key] = photo
+                    from PIL import Image, ImageOps, ImageTk
+
+                    with Image.open(key) as image:
+                        image = ImageOps.exif_transpose(image)
+                        if max_size is not None:
+                            image = ImageOps.contain(image, max_size)
+                        photo = ImageTk.PhotoImage(image.copy(), master=root)
+                    photo_cache[cache_key] = photo
                     debug_log(f"图片加载成功: {key}")
                     return photo
                 except Exception as e:
@@ -228,6 +257,7 @@ class VisualStimulusWindow:
                 clear_selection()
                 selection_frame.pack_forget()
                 image_label.place_forget()
+                text_label.place_forget()
                 # 释放图片引用
                 image_label.config(image='')
                 if hasattr(image_label, 'image'):
@@ -237,11 +267,15 @@ class VisualStimulusWindow:
                 title_label.config(text=str(payload.get("title", "")))
                 subtitle_label.config(text=str(payload.get("subtitle", "")))
 
-                if mode == "image":
+                if mode == "text":
+                    text_label.config(text=str(payload.get("text", "")))
+                    text_label.place(relx=0.5, rely=0.55, anchor=tk.CENTER)
+                    debug_log("文本显示成功")
+                elif mode == "image":
                     path = payload.get("image_path", self._default_image_path)
                     debug_log(f"显示图片: {path}")
                     try:
-                        photo = load_photo(Path(path))
+                        photo = load_photo(Path(path), max_size=(900, 650))
                         image_label.config(image=photo)
                         image_label.image = photo
                         image_label.place(relx=0.5, rely=0.55, anchor=tk.CENTER)
@@ -255,6 +289,7 @@ class VisualStimulusWindow:
             def apply_selection(payload: dict[str, Any]) -> None:
                 debug_log("apply_selection: 开始构建选择界面")
                 image_label.place_forget()
+                text_label.place_forget()
                 image_label.config(image='')
                 if hasattr(image_label, 'image'):
                     del image_label.image
@@ -266,8 +301,7 @@ class VisualStimulusWindow:
                 selection_frame.pack(fill="both", expand=True, pady=(10, 20))
                 for idx, item in enumerate(items):
                     try:
-                        photo = load_photo(item.image_path)
-                        thumb = photo.subsample(5, 5) if hasattr(photo, "subsample") else photo
+                        thumb = load_photo(item.image_path, max_size=(180, 140))
                     except Exception as e:
                         debug_log(f"加载选项图片失败 {item.image_path}: {e}")
                         continue
@@ -301,6 +335,48 @@ class VisualStimulusWindow:
                     selection_frame.grid_rowconfigure(i, weight=1)
                 debug_log("选择界面构建完成")
 
+            def apply_text_selection(payload: dict[str, Any]) -> None:
+                debug_log("apply_text_selection: 开始构建文字选择界面")
+                image_label.place_forget()
+                text_label.place_forget()
+                image_label.config(image='')
+                if hasattr(image_label, 'image'):
+                    del image_label.image
+                clear_selection()
+                title_label.config(text=str(payload.get("title", "")))
+                subtitle_label.config(text=str(payload.get("subtitle", "")))
+                items: list[TextSelectionItem] = list(payload.get("items") or [])
+                debug_log(f"共有 {len(items)} 个文字选项")
+                selection_frame.pack(fill="both", expand=True, pady=(28, 32))
+                for idx, item in enumerate(items):
+                    row = idx // 5
+                    col = idx % 5
+
+                    def on_click(chosen_id: int = int(item.item_id)) -> None:
+                        debug_log(f"用户点击了文字选项 {chosen_id}")
+                        self._selection_queue.put(chosen_id)
+
+                    btn = tk.Button(
+                        selection_frame,
+                        text=str(item.title),
+                        command=on_click,
+                        bg="#111111",
+                        fg="#ffffff",
+                        activebackground="#222222",
+                        activeforeground="#ffffff",
+                        relief="flat",
+                        font=("Arial", 26, "bold"),
+                        padx=22,
+                        pady=28,
+                    )
+                    btn.grid(row=row, column=col, padx=14, pady=14, sticky="nsew")
+
+                for i in range(5):
+                    selection_frame.grid_columnconfigure(i, weight=1)
+                for i in range(max(1, (len(items) + 4) // 5)):
+                    selection_frame.grid_rowconfigure(i, weight=1)
+                debug_log("文字选择界面构建完成")
+
             def poll() -> None:
                 if self._stop.is_set():
                     debug_log("轮询检测到停止标志，退出主循环")
@@ -326,6 +402,8 @@ class VisualStimulusWindow:
                             apply_state(dict(payload))
                         elif action == "selection":
                             apply_selection(dict(payload))
+                        elif action == "text_selection":
+                            apply_text_selection(dict(payload))
                         elif action == "pause":
                             show_pause(str(payload.get("message", "")), payload.get("event"))
                 except queue.Empty:

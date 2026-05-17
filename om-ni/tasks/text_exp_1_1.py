@@ -8,26 +8,26 @@ from typing import Any
 import numpy as np
 import yaml
 
-from adaptation.active_visual_protocol import EVENT_CODES as ACTIVE_EVENT_CODES
-from adaptation.active_visual_protocol import ActiveVisualTiming
 from adaptation.calibrator import CalibrationResult
+from adaptation.passive_visual_protocol import EVENT_CODES as PASSIVE_EVENT_CODES
+from adaptation.passive_visual_protocol import PassiveVisualTiming, build_passive_image_order
 from adaptation.session_recorder import SessionRecorder
 from tasks.visual_stimuli import REST_CLASS_ID, load_visual_stimuli
-from tasks.visual_window import SelectionItem, VisualStimulusWindow
+from tasks.visual_window import VisualStimulusWindow
 from utils.preprocessing import filter_and_transform
 
 _VISUAL_REST_CLASS_ID = REST_CLASS_ID
 
 
 @dataclass(slots=True)
-class VisualSegment:
+class TextSegment:
     label_id: int
     start_sample: int
     end_sample: int
     name: str
 
 
-def _build_windows(*, eeg: np.ndarray, segments: list[VisualSegment], config: dict[str, Any]) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def _build_windows(*, eeg: np.ndarray, segments: list[TextSegment], config: dict[str, Any]) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     sfreq = float(config["sfreq"])
     window_samples = int(round(float(config["window_sec"]) * sfreq))
     stride_samples = int(round(float(config["step_sec"]) * sfreq))
@@ -81,8 +81,9 @@ def run(
     session_dir: Path,
     stimulus_image_path: Path,
 ) -> CalibrationResult:
-    timing = ActiveVisualTiming()
+    timing = PassiveVisualTiming()
     blocks = int(config.get("protocol", {}).get("visual_blocks", 1))
+    seed = int(config.get("protocol", {}).get("random_seed", 17))
     stimuli = load_visual_stimuli(config, fallback_image_path=stimulus_image_path)
     label_names = {idx: stimulus.display_name for idx, stimulus in stimuli.items()} | {_VISUAL_REST_CLASS_ID: "静息"}
 
@@ -90,7 +91,7 @@ def run(
     window.start()
 
     recorder: SessionRecorder | None = None
-    segments: list[VisualSegment] = []
+    segments: list[TextSegment] = []
     trials: list[dict[str, Any]] = []
     try:
         acquirer.start_stream()
@@ -124,86 +125,91 @@ def run(
                 refresh()
                 time.sleep(0.05)
 
-        emit_event("session_start", int(ACTIVE_EVENT_CODES["SESSION_START"]), exp="1.2")
+        emit_event("session_start", int(PASSIVE_EVENT_CODES["SESSION_START"]), exp="2.1_text")
         for block_index in range(blocks):
             if block_index > 0:
                 pause_between_blocks(block_index)
 
-            remaining = list(stimuli.keys())
-            trial_index = 0
-            while remaining:
-                global_trial = block_index * 10 + int(trial_index)
-                emit_event("trial_start", int(ACTIVE_EVENT_CODES["TRIAL_START"]), exp="1.2", block=block_index, trial=global_trial, remaining=list(remaining))
+            order = build_passive_image_order(seed=seed + block_index, n_images=len(stimuli))
+            for trial_index, image_id in enumerate(order):
+                stimulus = stimuli[int(image_id)]
+                global_trial = block_index * len(stimuli) + int(trial_index)
+                emit_event(
+                    "trial_start",
+                    int(PASSIVE_EVENT_CODES["TRIAL_START"]),
+                    exp="2.1_text",
+                    block=block_index,
+                    trial=global_trial,
+                    image_id=int(image_id),
+                    stimulus_label=stimulus.label,
+                    stimulus_text=stimulus.text,
+                    stimulus_image=str(stimulus.image_path),
+                )
 
                 window.show_black("Baseline", "1s")
+                console.print("[bold yellow]Baseline[/bold yellow] 1s")
                 flush()
                 baseline_start = int(recorder.sample_count)
-                emit_event("baseline", int(ACTIVE_EVENT_CODES["BASELINE"]), exp="1.2", block=block_index, trial=global_trial)
-                emit_label(_VISUAL_REST_CLASS_ID, exp="1.2", block=block_index, trial=global_trial)
+                emit_event("baseline", int(PASSIVE_EVENT_CODES["BASELINE"]), exp="2.1_text", block=block_index, trial=global_trial)
+                emit_label(_VISUAL_REST_CLASS_ID, exp="2.1_text", block=block_index, trial=global_trial)
                 sleep_with_recording(timing.baseline_sec)
                 flush()
                 baseline_end = int(recorder.sample_count)
-                segments.append(VisualSegment(_VISUAL_REST_CLASS_ID, baseline_start, baseline_end, "exp_1_2_baseline"))
+                segments.append(TextSegment(_VISUAL_REST_CLASS_ID, baseline_start, baseline_end, "exp_2_1_text_baseline"))
 
-                window.show_black("黑屏主动想象", "2s")
-                console.print("[bold cyan]黑屏主动想象[/bold cyan] 2s")
+                window.show_text(f"文字{int(image_id) + 1}", stimulus.display_name, "记忆 1.5s")
+                emit_event(
+                    "text_show",
+                    int(PASSIVE_EVENT_CODES["IMAGE_SHOW"]),
+                    exp="2.1_text",
+                    block=block_index,
+                    trial=global_trial,
+                    image_id=int(image_id),
+                    stimulus_label=stimulus.label,
+                    stimulus_text=stimulus.text,
+                )
+                sleep_with_recording(timing.image_show_sec)
+
+                window.show_text("遮蔽", "#####", "0.5s")
+                emit_event("text_mask", int(PASSIVE_EVENT_CODES["MOSAIC"]), exp="2.1_text", block=block_index, trial=global_trial, image_id=int(image_id))
+                sleep_with_recording(timing.mosaic_sec)
+
+                window.show_black("黑屏回忆", "2s")
+                console.print("[bold cyan]黑屏回忆[/bold cyan] 2s")
                 flush()
-                imagine_start = int(recorder.sample_count)
-                emit_event("active_imagination", int(ACTIVE_EVENT_CODES["ACTIVE_IMAGINATION"]), exp="1.2", block=block_index, trial=global_trial)
-                sleep_with_recording(timing.active_imagination_sec)
+                recall_start = int(recorder.sample_count)
+                emit_event("recall", int(PASSIVE_EVENT_CODES["RECALL"]), exp="2.1_text", block=block_index, trial=global_trial, image_id=int(image_id))
+                emit_label(int(image_id), exp="2.1_text", block=block_index, trial=global_trial, image_id=int(image_id))
+                sleep_with_recording(timing.recall_sec)
                 flush()
-                imagine_end = int(recorder.sample_count)
+                recall_end = int(recorder.sample_count)
+                segments.append(TextSegment(int(image_id), recall_start, recall_end, "exp_2_1_text_recall"))
 
-                items = [
-                    SelectionItem(
-                        item_id=int(img_id),
-                        title=f"图片{int(img_id) + 1}",
-                        image_path=stimuli[int(img_id)].image_path,
-                    )
-                    for img_id in remaining
-                ]
-                window.show_selection("请选择你刚才想象的图片", "点击缩略图按钮", items)
-                emit_event("image_selection", int(ACTIVE_EVENT_CODES["IMAGE_SELECTION"]), exp="1.2", block=block_index, trial=global_trial, remaining=list(remaining))
+                window.show_black("ITI", "1.5s")
+                emit_event("iti", int(PASSIVE_EVENT_CODES["ITI"]), exp="2.1_text", block=block_index, trial=global_trial)
+                emit_label(_VISUAL_REST_CLASS_ID, exp="2.1_text", block=block_index, trial=global_trial)
+                sleep_with_recording(timing.iti_sec)
 
-                chosen: int | None = None
-                while chosen is None:
-                    flush()
-                    refresh()
-                    chosen = window.poll_selection()
-                    time.sleep(0.02)
-
-                emit_label(int(chosen), exp="1.2", block=block_index, trial=global_trial, chosen=int(chosen))
-                segments.append(VisualSegment(int(chosen), imagine_start, imagine_end, "exp_1_2_imagine"))
-                stimulus = stimuli[int(chosen)]
+                emit_event("trial_end", int(PASSIVE_EVENT_CODES["TRIAL_END"]), exp="2.1_text", block=block_index, trial=global_trial, image_id=int(image_id))
                 trials.append(
                     {
-                        "exp": "1.2",
+                        "exp": "2.1_text",
                         "block": int(block_index),
                         "trial_index": int(global_trial),
-                        "label_id": int(chosen),
+                        "image_id": int(image_id),
+                        "label_id": int(image_id),
                         "stimulus_label": stimulus.label,
                         "stimulus_text": stimulus.text,
                         "stimulus_image": str(stimulus.image_path),
-                        "imagine_start_sample": int(imagine_start),
-                        "imagine_end_sample": int(imagine_end),
                     }
                 )
-                remaining.remove(int(chosen))
 
-                window.show_black("ITI", "1.5s")
-                emit_event("iti", int(ACTIVE_EVENT_CODES["ITI"]), exp="1.2", block=block_index, trial=global_trial)
-                emit_label(_VISUAL_REST_CLASS_ID, exp="1.2", block=block_index, trial=global_trial)
-                sleep_with_recording(timing.iti_sec)
-
-                emit_event("trial_end", int(ACTIVE_EVENT_CODES["TRIAL_END"]), exp="1.2", block=block_index, trial=global_trial)
-                trial_index += 1
-
-        emit_event("session_end", int(ACTIVE_EVENT_CODES["SESSION_END"]), exp="1.2")
+        emit_event("session_end", int(PASSIVE_EVENT_CODES["SESSION_END"]), exp="2.1_text")
         acquirer.stop_stream()
 
         metadata = {
             "task_mode": "visual",
-            "experiment": "exp_1_2_active",
+            "experiment": "exp_2_1_text_passive",
             "sfreq": float(config["sfreq"]),
             "window_sec": float(config["window_sec"]),
             "step_sec": float(config["step_sec"]),
@@ -217,7 +223,7 @@ def run(
                 }
                 for stimulus in stimuli.values()
             ],
-            "event_codes": dict(ACTIVE_EVENT_CODES),
+            "event_codes": dict(PASSIVE_EVENT_CODES),
             "trials": trials,
             "segments": [
                 {
@@ -263,7 +269,7 @@ def run(
             yaml.safe_dump(
                 {
                     "task_mode": "visual",
-                    "experiment": "exp_1_2_active",
+                    "experiment": "exp_2_1_text_passive",
                     "model_path": str(model_path),
                     "session_dir": str(session_dir),
                     "windows_collected": int(X.shape[0]),

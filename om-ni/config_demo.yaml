@@ -4,9 +4,50 @@ device_type: brainco
 hardware_dummy_mode: true
 task_mode: visual
 sfreq: 250
-n_classes: 3
+n_classes: 11
 window_sec: 1.0        # 缩小窗口，避免切不出来
 step_sec: 0.5
+visual_stimuli:
+- id: 0
+  label: clock
+  text: 时钟
+  image: assets/EEG.png
+- id: 1
+  label: bicycle
+  text: 自行车
+  image: assets/EEG.png
+- id: 2
+  label: guitar
+  text: 吉他
+  image: assets/EEG.png
+- id: 3
+  label: chair
+  text: 椅子
+  image: assets/EEG.png
+- id: 4
+  label: cup
+  text: 杯子
+  image: assets/EEG.png
+- id: 5
+  label: apple
+  text: 苹果
+  image: assets/EEG.png
+- id: 6
+  label: car
+  text: 汽车
+  image: assets/EEG.png
+- id: 7
+  label: scissors
+  text: 剪刀
+  image: assets/EEG.png
+- id: 8
+  label: hammer
+  text: 锤子
+  image: assets/EEG.png
+- id: 9
+  label: key
+  text: 钥匙
+  image: assets/EEG.png
 confidence_threshold: 0.7
 mc_dropout_passes: 1
 new_subject_duration_sec: 60

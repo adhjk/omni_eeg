@@ -29,8 +29,11 @@ from models.factory import ModelFactory
 from utils.markers import LSLCommandOutlet, MarkerBackend
 from utils.preprocessing import filter_and_transform
 from utils.stream_writer import StreamWriter
+from tasks.text_exp_1_1 import run as run_text_exp_1_1
+from tasks.text_exp_1_2 import run as run_text_exp_1_2
 from tasks.visual_exp_1_1 import run as run_visual_exp_1_1
 from tasks.visual_exp_1_2 import run as run_visual_exp_1_2
+from tasks.visual_stimuli import REST_CLASS_ID, visual_label_names, visual_test_mode_prompts
 
 # ---------- 资产路径（基于本文件所在 tasks/ 目录的父目录） ----------
 _MOTOR_ROOT = Path(__file__).resolve().parent.parent
@@ -63,7 +66,7 @@ def _save_config(cfg: dict) -> None:
     except Exception as exc:
         st.error(f"保存配置文件失败: {exc}")
 
-_VISUAL_REST_CLASS_ID = 10
+_VISUAL_REST_CLASS_ID = REST_CLASS_ID
 _VISUAL_LABEL_NAMES = {idx: f"图片{idx + 1}" for idx in range(10)} | {_VISUAL_REST_CLASS_ID: "静息"}
 _VISUAL_COMMANDS = {idx: f"IMG_{idx + 1}" for idx in range(10)} | {_VISUAL_REST_CLASS_ID: "REST"}
 _VISUAL_TEST_MODE_PROMPTS = {idx: f"想象图片 {idx + 1}" for idx in range(10)} | {_VISUAL_REST_CLASS_ID: "保持静息"}
@@ -484,6 +487,8 @@ class VisualRealTimeDecoder:
         confidence_threshold: float,
         mc_dropout_passes: int,
         thread_context: Any | None = None,
+        label_names: dict[int, str] | None = None,
+        test_mode_prompts: dict[int, str] | None = None,
     ) -> None:
         del game_command_outlet
         self._acquirer = acquirer
@@ -499,6 +504,8 @@ class VisualRealTimeDecoder:
         self._thread: threading.Thread | None = None
         self._thread_context = thread_context
         self._fatal_exc: Exception | None = None
+        self._label_names = dict(label_names or _VISUAL_LABEL_NAMES)
+        self._test_mode_prompts = dict(test_mode_prompts or _VISUAL_TEST_MODE_PROMPTS)
 
     def start(self) -> None:
         self._acquirer.start_stream()
@@ -605,7 +612,7 @@ class VisualRealTimeDecoder:
             while time.monotonic() - started < duration_sec:
                 label = int(labels[cue_index % len(labels)])
                 cue_index += 1
-                prompt = _VISUAL_TEST_MODE_PROMPTS.get(label, f"class-{label}")
+                prompt = self._test_mode_prompts.get(label, f"class-{label}")
                 self._console.print(f"[bold yellow][cue][/bold yellow] {prompt}")
                 if heartbeat is not None:
                     heartbeat()
@@ -719,13 +726,13 @@ class VisualRealTimeDecoder:
         uncertainty = float(1.0 - confidence)
         if confidence < self._confidence_threshold:
             return PredictionResult(
-                label=_VISUAL_LABEL_NAMES[_VISUAL_REST_CLASS_ID],
+                label=self._label_names[_VISUAL_REST_CLASS_ID],
                 confidence=confidence,
                 uncertainty=uncertainty,
                 class_id=None,
             )
         return PredictionResult(
-            label=_VISUAL_LABEL_NAMES.get(best_index, f"class-{best_index}"),
+            label=self._label_names.get(best_index, f"class-{best_index}"),
             confidence=confidence,
             uncertainty=uncertainty,
             class_id=best_index,
@@ -981,8 +988,16 @@ def render_probe(config: dict) -> None:
 
 def render_calibration(config: dict) -> None:
     st.title("被试校准")
-    st.markdown("视觉刺激与图片选择在弹出窗口中完成。本页仅显示日志。")
-    experiment = st.radio("实验选择", ["实验1.1 被动想象", "实验1.2 主动想象"])
+    st.markdown("图片/文本刺激与选择在弹出窗口中完成。本页仅显示日志。")
+    experiment = st.radio(
+        "实验选择",
+        [
+            "实验1.1 被动想象",
+            "实验1.2 主动想象",
+            "实验2.1 文本被动想象",
+            "实验2.2 文本主动想象",
+        ],
+    )
     st.caption("弹窗默认全屏显示；按 ESC 退出全屏。多 block 时，block 间会隐藏窗口并按空格继续。")
 
     if st.button("开始", type="primary"):
@@ -1012,7 +1027,7 @@ def render_calibration(config: dict) -> None:
                 raise RuntimeError("缺少刺激图片: assets/EEG.png")
 
             with st.spinner("校准进行中..."):
-                if experiment.startswith("实验1.1"):
+                if experiment == "实验1.1 被动想象":
                     result = run_visual_exp_1_1(
                         config=config,
                         acquirer=acquirer,
@@ -1024,8 +1039,32 @@ def render_calibration(config: dict) -> None:
                         session_dir=session_dir,
                         stimulus_image_path=stimulus_path,
                     )
-                else:
+                elif experiment == "实验1.2 主动想象":
                     result = run_visual_exp_1_2(
+                        config=config,
+                        acquirer=acquirer,
+                        model=model,
+                        marker_backend=marker_backend,
+                        console=task_console,
+                        refresh=refresh,
+                        model_path=model_path,
+                        session_dir=session_dir,
+                        stimulus_image_path=stimulus_path,
+                    )
+                elif experiment == "实验2.1 文本被动想象":
+                    result = run_text_exp_1_1(
+                        config=config,
+                        acquirer=acquirer,
+                        model=model,
+                        marker_backend=marker_backend,
+                        console=task_console,
+                        refresh=refresh,
+                        model_path=model_path,
+                        session_dir=session_dir,
+                        stimulus_image_path=stimulus_path,
+                    )
+                else:
+                    result = run_text_exp_1_2(
                         config=config,
                         acquirer=acquirer,
                         model=model,
@@ -1098,6 +1137,8 @@ def render_test_mode(config: dict) -> None:
                 step_sec=float(config["step_sec"]),
                 confidence_threshold=float(config["confidence_threshold"]),
                 mc_dropout_passes=int(config["mc_dropout_passes"]),
+                label_names=visual_label_names(config),
+                test_mode_prompts=visual_test_mode_prompts(config),
             )
 
             with st.spinner("测试模式采集中..."):
@@ -1169,6 +1210,8 @@ def render_realtime(config: dict) -> None:
                 step_sec=float(config["step_sec"]),
                 confidence_threshold=float(config["confidence_threshold"]),
                 mc_dropout_passes=int(config["mc_dropout_passes"]),
+                label_names=visual_label_names(config),
+                test_mode_prompts=visual_test_mode_prompts(config),
             )
 
             with st.spinner("实时解码运行中..."):
