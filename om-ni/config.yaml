@@ -9,45 +9,45 @@ window_sec: 0.5
 step_sec: 0.25
 visual_stimuli:
 - id: 0
+  label: album
+  text: 相册
+  image: assets/visual_stimuli/00_album.jpg
+- id: 1
+  label: book
+  text: 书
+  image: assets/visual_stimuli/01_book.jpg
+- id: 2
+  label: calculator
+  text: 计算器
+  image: assets/visual_stimuli/02_calculator.jpg
+- id: 3
   label: clock
   text: 时钟
-  image: assets/visual_stimuli/00_clock.png
-- id: 1
-  label: bicycle
-  text: 自行车
-  image: assets/visual_stimuli/01_bicycle.png
-- id: 2
-  label: guitar
-  text: 吉他
-  image: assets/visual_stimuli/02_guitar.png
-- id: 3
-  label: chair
-  text: 椅子
-  image: assets/visual_stimuli/03_chair.png
+  image: assets/visual_stimuli/03_clock.jpg
 - id: 4
-  label: cup
-  text: 杯子
-  image: assets/visual_stimuli/04_cup.png
+  label: folder
+  text: 文件夹
+  image: assets/visual_stimuli/04_folder.jpg
 - id: 5
-  label: apple
-  text: 苹果
-  image: assets/visual_stimuli/05_apple.png
+  label: glasses
+  text: 眼镜
+  image: assets/visual_stimuli/05_glasses.jpg
 - id: 6
-  label: car
-  text: 汽车
-  image: assets/visual_stimuli/06_car.png
+  label: magnifying_glass
+  text: 放大镜
+  image: assets/visual_stimuli/06_magnifying_glass.jpg
 - id: 7
-  label: scissors
-  text: 剪刀
-  image: assets/visual_stimuli/07_scissors.png
+  label: map
+  text: 地图
+  image: assets/visual_stimuli/07_map.jpg
 - id: 8
-  label: hammer
-  text: 锤子
-  image: assets/visual_stimuli/08_hammer.png
+  label: notepad
+  text: 记事本
+  image: assets/visual_stimuli/08_notepad.jpg
 - id: 9
-  label: key
-  text: 钥匙
-  image: assets/visual_stimuli/09_key.png
+  label: ruler
+  text: 尺子
+  image: assets/visual_stimuli/09_ruler.jpg
 confidence_threshold: 0.7
 mc_dropout_passes: 1
 new_subject_duration_sec: 60
