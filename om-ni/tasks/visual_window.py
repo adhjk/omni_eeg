@@ -118,6 +118,10 @@ class VisualStimulusWindow:
         debug_log(f"show_image: title={title}, subtitle={subtitle}, path={path}")
         self._queue.put(("state", {"title": str(title), "subtitle": str(subtitle), "mode": "image", "image_path": path}))
 
+    def show_noise_mask(self) -> None:
+        debug_log("show_noise_mask")
+        self._queue.put(("state", {"title": "", "subtitle": "", "mode": "noise_mask"}))
+
     def show_text(self, title: str, text: str, subtitle: str = "") -> None:
         debug_log(f"show_text: title={title}, text={text}, subtitle={subtitle}")
         self._queue.put(("state", {"title": str(title), "subtitle": str(subtitle), "mode": "text", "text": str(text)}))
@@ -213,6 +217,21 @@ class VisualStimulusWindow:
                     debug_log(f"图片加载失败 {key}: {e}\n{traceback.format_exc()}")
                     raise
 
+            def create_noise_photo(size: tuple[int, int]) -> Any:
+                try:
+                    from PIL import Image, ImageEnhance, ImageTk
+
+                    width, height = size
+                    width = max(int(width), 320)
+                    height = max(int(height), 240)
+                    noise = Image.effect_noise((width, height), 95).convert("L")
+                    noise = ImageEnhance.Contrast(noise).enhance(1.25)
+                    noise = noise.convert("RGB")
+                    return ImageTk.PhotoImage(noise, master=root)
+                except Exception as e:
+                    debug_log(f"生成雪花屏失败: {e}\n{traceback.format_exc()}")
+                    raise
+
             def clear_selection() -> None:
                 debug_log("清除选择区域")
                 for child in selection_frame.winfo_children():
@@ -285,6 +304,22 @@ class VisualStimulusWindow:
                         # 回退到黑屏
                         title_label.config(text="图片加载失败，请检查路径")
                         subtitle_label.config(text=str(path))
+                elif mode == "noise_mask":
+                    debug_log("显示灰色雪花屏遮罩")
+                    title_label.config(text="")
+                    subtitle_label.config(text="")
+                    try:
+                        size = (max(root.winfo_width(), root.winfo_screenwidth()), max(root.winfo_height(), root.winfo_screenheight()))
+                        photo = create_noise_photo(size)
+                        image_label.config(image=photo)
+                        image_label.image = photo
+                        image_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+                        image_label.lift()
+                        debug_log("灰色雪花屏显示成功")
+                    except Exception as e:
+                        debug_log(f"显示灰色雪花屏失败: {e}\n{traceback.format_exc()}")
+                        title_label.config(text="")
+                        subtitle_label.config(text="")
 
             def apply_selection(payload: dict[str, Any]) -> None:
                 debug_log("apply_selection: 开始构建选择界面")

@@ -170,7 +170,7 @@ def run(
                 )
                 sleep_with_recording(timing.image_show_sec)
 
-                window.show_image("马赛克", "0.5s")
+                window.show_noise_mask()
                 emit_event("mosaic", int(PASSIVE_EVENT_CODES["MOSAIC"]), exp="1.1", block=block_index, trial=global_trial, image_id=int(image_id))
                 sleep_with_recording(timing.mosaic_sec)
 

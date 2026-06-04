@@ -555,9 +555,25 @@ def load_calibration_windows(
         raise click.ClickException(f"Calibration directory not found: {calibration_root}")
 
     if session_ids:
-        session_dirs = [calibration_root / session_id for session_id in session_ids]
+        session_dirs = []
+        for session_id in session_ids:
+            requested_dir = calibration_root / session_id
+            if (requested_dir / "training_windows_main.npz").exists():
+                session_dirs.append(requested_dir)
+                continue
+            matches = sorted(
+                path.parent
+                for path in calibration_root.glob(f"*/{session_id}/training_windows_main.npz")
+            )
+            if matches:
+                session_dirs.extend(matches)
+            else:
+                session_dirs.append(requested_dir)
     else:
-        session_dirs = sorted(path for path in calibration_root.iterdir() if path.is_dir())
+        session_dirs = sorted(
+            dataset_path.parent
+            for dataset_path in calibration_root.glob("**/training_windows_main.npz")
+        )
     if not session_dirs:
         raise click.ClickException(f"No calibration sessions found in {calibration_root}")
 

@@ -534,6 +534,41 @@ class CliHelperTests(unittest.TestCase):
             self.assertTrue(np.all(X[:2] == 10.0))
             self.assertTrue(np.all(X[2:] == 20.0))
 
+    def test_load_calibration_windows_discovers_experiment_subdirs(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            records_dir = Path(tmp_dir) / "records"
+            session_a = records_dir / "S001" / "calibration" / "exp_1_1_visual_passive" / "20260413_100000"
+            session_b = records_dir / "S001" / "calibration" / "exp_2_1_text_passive" / "20260413_110000"
+            session_a.mkdir(parents=True)
+            session_b.mkdir(parents=True)
+
+            np.savez_compressed(
+                session_a / "training_windows_main.npz",
+                raw_windows=np.ones((1, 3, 4), dtype=np.float32),
+                processed_windows=np.full((1, 3, 4), 10.0, dtype=np.float32),
+                labels=np.asarray([0], dtype=np.int64),
+            )
+            np.savez_compressed(
+                session_b / "training_windows_main.npz",
+                raw_windows=np.ones((1, 3, 4), dtype=np.float32) * 2,
+                processed_windows=np.full((1, 3, 4), 20.0, dtype=np.float32),
+                labels=np.asarray([2], dtype=np.int64),
+            )
+
+            X, y, sessions = load_calibration_windows(records_dir, "S001")
+            self.assertEqual(X.shape, (2, 3, 4))
+            np.testing.assert_array_equal(y, np.asarray([0, 2], dtype=np.int64))
+            self.assertEqual([session.parent.name for session in sessions], ["exp_1_1_visual_passive", "exp_2_1_text_passive"])
+
+            selected_X, selected_y, selected_sessions = load_calibration_windows(
+                records_dir,
+                "S001",
+                session_ids=("20260413_110000",),
+            )
+            self.assertEqual(selected_X.shape, (1, 3, 4))
+            np.testing.assert_array_equal(selected_y, np.asarray([2], dtype=np.int64))
+            self.assertEqual(selected_sessions[0], session_b)
+
     def test_replay_test_mode_runs_model_on_saved_chunks(self) -> None:
         class FakeModel:
             def predict_proba(self, X, mc_dropout_passes=1):

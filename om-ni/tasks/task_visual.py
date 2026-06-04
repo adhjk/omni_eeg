@@ -70,6 +70,12 @@ _VISUAL_REST_CLASS_ID = REST_CLASS_ID
 _VISUAL_LABEL_NAMES = {idx: f"图片{idx + 1}" for idx in range(10)} | {_VISUAL_REST_CLASS_ID: "静息"}
 _VISUAL_COMMANDS = {idx: f"IMG_{idx + 1}" for idx in range(10)} | {_VISUAL_REST_CLASS_ID: "REST"}
 _VISUAL_TEST_MODE_PROMPTS = {idx: f"想象图片 {idx + 1}" for idx in range(10)} | {_VISUAL_REST_CLASS_ID: "保持静息"}
+_EXPERIMENT_DIR_NAMES = {
+    "实验1.1 被动想象": "exp_1_1_visual_passive",
+    "实验1.2 主动想象": "exp_1_2_visual_active",
+    "实验2.1 文本被动想象": "exp_2_1_text_passive",
+    "实验2.2 文本主动想象": "exp_2_2_text_active",
+}
 
 # ---------- 提示符号与事件解析 ----------
 PROMPT_TEXTS = tuple(_VISUAL_TEST_MODE_PROMPTS.values())
@@ -761,7 +767,7 @@ def render_home() -> None:
 
         - 静息态基线 1s
         - 随机展示 1 张图片 1.5s（记忆）
-        - 马赛克提示 0.5s → 黑屏
+        - 灰色雪花屏遮罩 0.5s → 黑屏
         - 回忆并想象该图片 2s
         - 间隔 1.5s
 
@@ -772,7 +778,20 @@ def render_home() -> None:
         - 展示 10 张图（两排）→ 点击你刚才想象的图 → 该图消除
         - 间隔 1.5s → 黑屏 → 想象下一张，直到全部选完
 
-        注意：当前所有图片/黑屏暂用 `assets/EEG.png` 代替。
+        **实验 2.1 文本被动想象（10 次）**
+
+        - 静息态基线 1s
+        - 随机展示 1 个文本标签 1.5s（记忆）
+        - 文本遮罩提示 0.5s → 黑屏
+        - 回忆并想象该文本对应的目标 2s
+        - 间隔 1.5s
+
+        **实验 2.2 文本主动想象（10 次）**
+
+        - 静息态基线 1s
+        - 黑屏 → 无刺激主动想象任意目标 2s
+        - 展示 10 个文本选项（两排）→ 点击你刚才想象的目标 → 该选项消除
+        - 间隔 1.5s → 黑屏 → 想象下一项，直到全部选完
         """
     )
 
@@ -1020,7 +1039,8 @@ def render_calibration(config: dict) -> None:
             model_path = build_model_path(config, subject_id, model_name, device_name=str(config["device_type"]))
             records_dir = Path(str(config.get("storage", {}).get("records_dir", "records_storage")))
             session_stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            session_dir = records_dir / subject_id / "calibration" / session_stamp
+            experiment_dir = _EXPERIMENT_DIR_NAMES[experiment]
+            session_dir = records_dir / subject_id / "calibration" / experiment_dir / session_stamp
 
             stimulus_path = _resolve_asset_path("EEG.png")
             if stimulus_path is None:
