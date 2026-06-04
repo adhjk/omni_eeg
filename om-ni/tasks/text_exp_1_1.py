@@ -170,7 +170,7 @@ def run(
                 )
                 sleep_with_recording(timing.image_show_sec)
 
-                window.show_text("遮蔽", "#####", "0.5s")
+                window.show_cross_mask()
                 emit_event("text_mask", int(PASSIVE_EVENT_CODES["MOSAIC"]), exp="2.1_text", block=block_index, trial=global_trial, image_id=int(image_id))
                 sleep_with_recording(timing.mosaic_sec)
 

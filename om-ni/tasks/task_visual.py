@@ -33,7 +33,7 @@ from tasks.text_exp_1_1 import run as run_text_exp_1_1
 from tasks.text_exp_1_2 import run as run_text_exp_1_2
 from tasks.visual_exp_1_1 import run as run_visual_exp_1_1
 from tasks.visual_exp_1_2 import run as run_visual_exp_1_2
-from tasks.visual_stimuli import REST_CLASS_ID, visual_label_names, visual_test_mode_prompts
+from tasks.visual_stimuli import REST_CLASS_ID, text_test_mode_prompts, visual_label_names, visual_test_mode_prompts
 
 # ---------- 资产路径（基于本文件所在 tasks/ 目录的父目录） ----------
 _MOTOR_ROOT = Path(__file__).resolve().parent.parent
@@ -76,6 +76,10 @@ _EXPERIMENT_DIR_NAMES = {
     "实验2.1 文本被动想象": "exp_2_1_text_passive",
     "实验2.2 文本主动想象": "exp_2_2_text_active",
 }
+_TEST_MODE_CUE_DIR_NAMES = {
+    "图片视觉 cue": "visual_cue",
+    "文本视觉 cue": "text_cue",
+}
 
 # ---------- 提示符号与事件解析 ----------
 PROMPT_TEXTS = tuple(_VISUAL_TEST_MODE_PROMPTS.values())
@@ -93,6 +97,9 @@ def _resolve_cue_symbol(message: str, *, event_type: str) -> tuple[str, bool] | 
     if "静息" in message or "REST" in message.upper() or "IDLE" in message.upper():
         return _DISPLAY_SYMBOLS["REST"], event_type == "prediction"
     if "图片" in message:
+        digits = "".join(ch for ch in message if ch.isdigit())
+        return (digits if digits else _DISPLAY_SYMBOLS["TRANSITION"]), event_type == "prediction"
+    if "文本" in message or "文字" in message:
         digits = "".join(ch for ch in message if ch.isdigit())
         return (digits if digits else _DISPLAY_SYMBOLS["TRANSITION"]), event_type == "prediction"
     if "校准完成" in message:
@@ -583,10 +590,11 @@ class VisualRealTimeDecoder:
         duration_sec: int,
         block_sec: float = 10.0,
         save_dir: Path | None = None,
+        cue_modality: str = "visual_cue",
         heartbeat: Callable[[], None] | None = None,
     ) -> dict[str, float | int | str]:
         del block_sec
-        self._console.print("[bold cyan]测试模式启动（视觉 cue）[/bold cyan]")
+        self._console.print(f"[bold cyan]测试模式启动（{cue_modality}）[/bold cyan]")
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         root_dir = save_dir or Path("records_storage") / subject_id / "test_mode" / timestamp
         writer = StreamWriter(root_dir)
@@ -595,6 +603,7 @@ class VisualRealTimeDecoder:
                 "subject_id": subject_id,
                 "mode": "test_mode",
                 "task_mode": "visual",
+                "cue_modality": cue_modality,
                 "start_time": time.time(),
                 "sfreq": self._sfreq,
                 "window_sec": self._window_sec,
@@ -675,10 +684,10 @@ class VisualRealTimeDecoder:
         valid_accuracy = float(np.mean(y_pred[pred_valid] == y_true[pred_valid])) if np.any(pred_valid) else 0.0
 
         writer.stop()
-        writer.update_manifest({"accuracy": accuracy, "valid_accuracy": valid_accuracy})
+        writer.update_manifest({"accuracy": accuracy, "valid_accuracy": valid_accuracy, "cue_modality": cue_modality})
         self._console.print(f"[bold green]测试数据已保存[/bold green] {root_dir}")
 
-        return {"windows": len(true_labels), "accuracy": accuracy, "valid_accuracy": valid_accuracy}
+        return {"windows": len(true_labels), "accuracy": accuracy, "valid_accuracy": valid_accuracy, "session_dir": str(root_dir)}
 
     def _decode_loop(self) -> None:
         consecutive_failures = 0
@@ -782,7 +791,7 @@ def render_home() -> None:
 
         - 静息态基线 1s
         - 随机展示 1 个文本标签 1.5s（记忆）
-        - 文本遮罩提示 0.5s → 黑屏
+        - 黑屏白色十字遮罩 0.5s → 黑屏
         - 回忆并想象该文本对应的目标 2s
         - 间隔 1.5s
 
@@ -1109,7 +1118,8 @@ def render_calibration(config: dict) -> None:
 
 def render_test_mode(config: dict) -> None:
     st.title("Cue 测试模式")
-    st.markdown("运行过程中会展示视觉 cue（图片1~10 + 静息）并展示模型输出日志。")
+    st.markdown("运行过程中会展示 cue（10 个目标 + 静息）并展示模型输出日志。")
+    cue_mode = st.radio("Cue 类型", list(_TEST_MODE_CUE_DIR_NAMES), horizontal=True)
     duration = st.number_input("测试总时长 (秒)", min_value=30, value=120, step=30)
 
     if st.button("开始测试", type="primary"):
@@ -1141,6 +1151,11 @@ def render_test_mode(config: dict) -> None:
                 st.error(f"未找到模型权重文件: {model_path}。请先执行校准。")
                 return
             model.load(model_path)
+            cue_dir_name = _TEST_MODE_CUE_DIR_NAMES[cue_mode]
+            if cue_mode == "文本视觉 cue":
+                test_mode_prompts = text_test_mode_prompts(config)
+            else:
+                test_mode_prompts = visual_test_mode_prompts(config)
 
             command_outlet = LSLCommandOutlet(
                 stream_name=str(config["output"]["command_stream_name"]),
@@ -1158,10 +1173,11 @@ def render_test_mode(config: dict) -> None:
                 confidence_threshold=float(config["confidence_threshold"]),
                 mc_dropout_passes=int(config["mc_dropout_passes"]),
                 label_names=visual_label_names(config),
-                test_mode_prompts=visual_test_mode_prompts(config),
+                test_mode_prompts=test_mode_prompts,
             )
 
             with st.spinner("测试模式采集中..."):
+                session_stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 result = decoder.run_test_mode(
                     subject_id=subject_id,
                     marker_backend=task.wrap_marker_backend(build_marker_backend(config)),
@@ -1169,7 +1185,10 @@ def render_test_mode(config: dict) -> None:
                     block_sec=float(config.get("collect_block_sec", 10.0)),
                     save_dir=Path(str(config.get("storage", {}).get("records_dir", "records_storage")))
                     / subject_id
-                    / "test_mode",
+                    / "test_mode"
+                    / cue_dir_name
+                    / session_stamp,
+                    cue_modality=cue_dir_name,
                     heartbeat=refresh,
                 )
 
@@ -1178,6 +1197,7 @@ def render_test_mode(config: dict) -> None:
             st.write(f"- 记录的窗口数: **{result['windows']}**")
             st.write(f"- 准确率: **{result['accuracy']:.3f}**")
             st.write(f"- 有效准确率: **{result['valid_accuracy']:.3f}**")
+            st.write(f"- session 保存位置: `{result['session_dir']}`")
         except Exception as exc:
             st.exception(exc)
 

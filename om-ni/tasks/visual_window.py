@@ -122,6 +122,10 @@ class VisualStimulusWindow:
         debug_log("show_noise_mask")
         self._queue.put(("state", {"title": "", "subtitle": "", "mode": "noise_mask"}))
 
+    def show_cross_mask(self) -> None:
+        debug_log("show_cross_mask")
+        self._queue.put(("state", {"title": "", "subtitle": "", "mode": "cross_mask"}))
+
     def show_text(self, title: str, text: str, subtitle: str = "") -> None:
         debug_log(f"show_text: title={title}, text={text}, subtitle={subtitle}")
         self._queue.put(("state", {"title": str(title), "subtitle": str(subtitle), "mode": "text", "text": str(text)}))
@@ -287,7 +291,7 @@ class VisualStimulusWindow:
                 subtitle_label.config(text=str(payload.get("subtitle", "")))
 
                 if mode == "text":
-                    text_label.config(text=str(payload.get("text", "")))
+                    text_label.config(text=str(payload.get("text", "")), font=("Arial", 84, "bold"), fg="#ffffff", bg="#000000")
                     text_label.place(relx=0.5, rely=0.55, anchor=tk.CENTER)
                     debug_log("文本显示成功")
                 elif mode == "image":
@@ -320,6 +324,12 @@ class VisualStimulusWindow:
                         debug_log(f"显示灰色雪花屏失败: {e}\n{traceback.format_exc()}")
                         title_label.config(text="")
                         subtitle_label.config(text="")
+                elif mode == "cross_mask":
+                    debug_log("显示黑屏白色十字遮罩")
+                    title_label.config(text="")
+                    subtitle_label.config(text="")
+                    text_label.config(text="+", font=("Arial", 96, "bold"), fg="#ffffff", bg="#000000")
+                    text_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
 
             def apply_selection(payload: dict[str, Any]) -> None:
                 debug_log("apply_selection: 开始构建选择界面")

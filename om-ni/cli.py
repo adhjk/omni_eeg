@@ -1158,12 +1158,18 @@ def run(
     if test_mode:
         marker_backend = task.wrap_marker_backend(build_marker_backend(config))
         records_dir = Path(str(config.get("storage", {}).get("records_dir", "records_storage")))
+        test_save_dir = records_dir / subject_id / "test_mode"
+        test_mode_kwargs: dict[str, Any] = {}
+        if resolve_task_mode(config) == "visual":
+            test_save_dir = test_save_dir / "visual_cue" / time.strftime("%Y%m%d_%H%M%S")
+            test_mode_kwargs["cue_modality"] = "visual_cue"
         result = decoder.run_test_mode(
             subject_id=subject_id,
             marker_backend=marker_backend,
             duration_sec=test_duration,
             block_sec=float(config.get("collect_block_sec", 10)),
-            save_dir=records_dir / subject_id / "test_mode",
+            save_dir=test_save_dir,
+            **test_mode_kwargs,
         )
         app.console.print(
             f"[bold green]测试完成[/bold green] windows={result['windows']} "

@@ -120,3 +120,10 @@ def visual_test_mode_prompts(config: dict[str, Any], *, fallback_image_path: Pat
     prompts = {idx: f"想象图片 {idx + 1}: {labels[idx]}" for idx in range(DEFAULT_IMAGE_COUNT)}
     prompts[REST_CLASS_ID] = "保持静息"
     return prompts
+
+
+def text_test_mode_prompts(config: dict[str, Any], *, fallback_image_path: Path | None = None) -> dict[int, str]:
+    labels = visual_label_names(config, fallback_image_path=fallback_image_path)
+    prompts = {idx: f"想象文本 {idx + 1}: {labels[idx]}" for idx in range(DEFAULT_IMAGE_COUNT)}
+    prompts[REST_CLASS_ID] = "保持静息"
+    return prompts
