@@ -9,6 +9,14 @@ from typing import Any
 
 # 调试开关
 DEBUG = True
+_UI_FONT_FAMILY = "Microsoft YaHei UI"
+_TITLE_FONT = (_UI_FONT_FAMILY, 28)
+_SUBTITLE_FONT = (_UI_FONT_FAMILY, 18)
+_TEXT_FONT = (_UI_FONT_FAMILY, 84, "bold")
+_CROSS_FONT = (_UI_FONT_FAMILY, 96, "bold")
+_PAUSE_FONT = (_UI_FONT_FAMILY, 16)
+_IMAGE_BUTTON_FONT = (_UI_FONT_FAMILY, 14)
+_TEXT_BUTTON_FONT = (_UI_FONT_FAMILY, 26, "bold")
 
 def debug_log(msg: str) -> None:
     if DEBUG:
@@ -181,15 +189,15 @@ class VisualStimulusWindow:
             frame = tk.Frame(root, bg="#000000")
             frame.pack(fill="both", expand=True)
 
-            title_label = tk.Label(frame, font=("Arial", 28), bg="#000000", fg="#ffffff", justify="center")
+            title_label = tk.Label(frame, font=_TITLE_FONT, bg="#000000", fg="#ffffff", justify="center")
             title_label.pack(fill="x", pady=(26, 6))
-            subtitle_label = tk.Label(frame, font=("Arial", 18), bg="#000000", fg="#cccccc", justify="center")
+            subtitle_label = tk.Label(frame, font=_SUBTITLE_FONT, bg="#000000", fg="#cccccc", justify="center")
             subtitle_label.pack(fill="x", pady=(0, 18))
 
             image_label = tk.Label(frame, bg="#000000")
             text_label = tk.Label(
                 frame,
-                font=("Arial", 84, "bold"),
+                font=_TEXT_FONT,
                 bg="#000000",
                 fg="#ffffff",
                 justify="center",
@@ -255,7 +263,7 @@ class VisualStimulusWindow:
                 pause_root.configure(bg="#000000")
                 pause_root.attributes("-topmost", True)
                 pause_root.geometry("520x140")
-                lbl = tk.Label(pause_root, text=message, font=("Arial", 16), bg="#000000", fg="#ffffff", justify="center")
+                lbl = tk.Label(pause_root, text=message, font=_PAUSE_FONT, bg="#000000", fg="#ffffff", justify="center")
                 lbl.pack(fill="both", expand=True, padx=20, pady=20)
 
                 def on_space(_evt=None) -> None:
@@ -291,7 +299,7 @@ class VisualStimulusWindow:
                 subtitle_label.config(text=str(payload.get("subtitle", "")))
 
                 if mode == "text":
-                    text_label.config(text=str(payload.get("text", "")), font=("Arial", 84, "bold"), fg="#ffffff", bg="#000000")
+                    text_label.config(text=str(payload.get("text", "")), font=_TEXT_FONT, fg="#ffffff", bg="#000000")
                     text_label.place(relx=0.5, rely=0.55, anchor=tk.CENTER)
                     debug_log("文本显示成功")
                 elif mode == "image":
@@ -328,7 +336,7 @@ class VisualStimulusWindow:
                     debug_log("显示黑屏白色十字遮罩")
                     title_label.config(text="")
                     subtitle_label.config(text="")
-                    text_label.config(text="+", font=("Arial", 96, "bold"), fg="#ffffff", bg="#000000")
+                    text_label.config(text="+", font=_CROSS_FONT, fg="#ffffff", bg="#000000")
                     text_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
 
             def apply_selection(payload: dict[str, Any]) -> None:
@@ -368,6 +376,7 @@ class VisualStimulusWindow:
                         activebackground="#222222",
                         activeforeground="#ffffff",
                         relief="flat",
+                        font=_IMAGE_BUTTON_FONT,
                         padx=10,
                         pady=10,
                     )
@@ -410,7 +419,7 @@ class VisualStimulusWindow:
                         activebackground="#222222",
                         activeforeground="#ffffff",
                         relief="flat",
-                        font=("Arial", 26, "bold"),
+                        font=_TEXT_BUTTON_FONT,
                         padx=22,
                         pady=28,
                     )
