@@ -50,7 +50,7 @@ def build_active_image_order(*, seed: int, n_images: int = 20) -> list[int]:
     return order
 
 
-def build_full_active_trial_order(*, seed: int, n_images: int = 20, trials_per_image: int = 1000) -> list[int]:
+def build_full_active_trial_order(*, seed: int, n_images: int = 20, trials_per_image: int = 180) -> list[int]:
     if n_images <= 0:
         raise ValueError(f"n_images must be positive, got {n_images}")
     if trials_per_image <= 0:

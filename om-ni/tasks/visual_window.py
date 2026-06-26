@@ -17,6 +17,7 @@ _CROSS_FONT = (_UI_FONT_FAMILY, 96, "bold")
 _PAUSE_FONT = (_UI_FONT_FAMILY, 16)
 _IMAGE_BUTTON_FONT = (_UI_FONT_FAMILY, 14)
 _TEXT_BUTTON_FONT = (_UI_FONT_FAMILY, 26, "bold")
+_PROGRESS_FONT = (_UI_FONT_FAMILY, 18, "bold")
 
 def debug_log(msg: str) -> None:
     if DEBUG:
@@ -146,6 +147,10 @@ class VisualStimulusWindow:
         debug_log(f"show_text_selection: title={title}, items count={len(items)}")
         self._queue.put(("text_selection", {"title": str(title), "subtitle": str(subtitle), "items": list(items)}))
 
+    def set_progress(self, current: int, total: int) -> None:
+        debug_log(f"set_progress: {current}/{total}")
+        self._queue.put(("progress", {"current": int(current), "total": int(total)}))
+
     def poll_selection(self) -> int | None:
         try:
             val = int(self._selection_queue.get_nowait())
@@ -193,6 +198,9 @@ class VisualStimulusWindow:
             title_label.pack(fill="x", pady=(26, 6))
             subtitle_label = tk.Label(frame, font=_SUBTITLE_FONT, bg="#000000", fg="#cccccc", justify="center")
             subtitle_label.pack(fill="x", pady=(0, 18))
+
+            progress_label = tk.Label(frame, font=_PROGRESS_FONT, bg="#000000", fg="#00ff00", justify="right")
+            progress_label.place(relx=0.98, rely=0.02, anchor="ne")
 
             image_label = tk.Label(frame, bg="#000000")
             text_label = tk.Label(
@@ -460,6 +468,10 @@ class VisualStimulusWindow:
                             apply_text_selection(dict(payload))
                         elif action == "pause":
                             show_pause(str(payload.get("message", "")), payload.get("event"))
+                        elif action == "progress":
+                            current = int(payload.get("current", 0))
+                            total = int(payload.get("total", 0))
+                            progress_label.config(text=f"{current}/{total}")
                 except queue.Empty:
                     pass
                 root.after(50, poll)

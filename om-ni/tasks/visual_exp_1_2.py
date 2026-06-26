@@ -131,8 +131,9 @@ def run(
 
         emit_event("session_start", int(ACTIVE_EVENT_CODES["SESSION_START"]), exp="1.2", task="active")
 
-        full_order = build_full_active_trial_order(seed=seed, n_images=n_images, trials_per_image=1000)
-        console.print(f"[bold cyan]生成 {len(full_order)} 个 trial，每张图片 {1000} 次[/bold cyan]")
+        trials_per_image = 180
+        full_order = build_full_active_trial_order(seed=seed, n_images=n_images, trials_per_image=trials_per_image)
+        console.print(f"[bold cyan]生成 {len(full_order)} 个 trial，每张图片 {trials_per_image} 次[/bold cyan]")
 
         trials_per_hour = 900
         total_trials = len(full_order)
@@ -227,6 +228,7 @@ def run(
                 )
 
                 current_trial += 1
+                window.set_progress(current_trial, total_trials)
                 if current_trial % 100 == 0:
                     console.print(f"[bold cyan]进度[/bold cyan] {current_trial}/{total_trials} ({current_trial/total_trials*100:.1f}%)")
 
