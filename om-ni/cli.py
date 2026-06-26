@@ -8,6 +8,7 @@ import re
 import time
 from copy import deepcopy
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -261,8 +262,8 @@ def load_config(path: Path) -> dict[str, Any]:
         if int(config["n_classes"]) != 3:
             raise click.ClickException("task_mode=motor requires n_classes=3.")
     elif mode == "visual":
-        if int(config["n_classes"]) != 11:
-            raise click.ClickException("task_mode=visual requires n_classes=11 (10 images + rest).")
+        if int(config["n_classes"]) != 21:
+            raise click.ClickException("task_mode=visual requires n_classes=21 (20 images + rest).")
     return config
 
 
@@ -1343,6 +1344,94 @@ def replay_test_mode_command(
         f"[bold green]回放完成[/bold green] windows={result['windows']} "
         f"accuracy={result['accuracy']:.3f} mean_confidence={result['mean_confidence']:.3f} "
         f"class_acc=[{', '.join(class_summary)}]"
+    )
+
+
+@cli.command("run-experiment")
+@click.option("--subject", "subject_id", required=True, type=str)
+@click.option("--session", "session_id", type=str, default="01", help="Session ID (e.g., 01, 02)")
+@click.option("--exp-mode", "exp_mode", type=click.Choice(["passive", "active"]), required=True, help="Experiment mode: passive or active")
+@click.option("--model", "model_name", type=str, default=None, help="Model registry name.")
+@click.pass_obj
+def run_experiment(
+    app: AppContext,
+    subject_id: str,
+    session_id: str,
+    exp_mode: str,
+    model_name: str | None,
+) -> None:
+    """Run visual imagination experiment (passive or active)."""
+
+    config = app.config
+    task = load_task_from_config(config)
+    task_console = task.wrap_console(app.console)
+    selected_model = model_name or str(config["model_name"])
+    acquirer = build_acquirer(
+        device_name=str(config["device_type"]),
+        config=config,
+    )
+    effective_n_channels = int(acquirer.metadata.n_channels)
+    model_path = build_model_path(
+        config,
+        subject_id,
+        selected_model,
+        device_name=str(config["device_type"]),
+    )
+    model_factory = get_model_factory()
+    model = model_factory.get(
+        selected_model,
+        n_chans=effective_n_channels,
+        sfreq=float(config["sfreq"]),
+        n_classes=int(config["n_classes"]),
+        n_times=int(float(config["sfreq"]) * float(config["window_sec"])),
+    )
+
+    records_dir = Path(str(config.get("storage", {}).get("records_dir", "records_storage")))
+    session_stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    exp_session_dir = records_dir / subject_id / "experiment" / exp_mode / session_stamp
+
+    fallback_image_path = Path(__file__).with_name("assets") / "EEG.png"
+
+    from tasks.visual_exp_1_1 import run as run_passive
+    from tasks.visual_exp_1_2 import run as run_active
+
+    app.console.print(f"[bold cyan]开始实验[/bold cyan] subject={subject_id} session={session_id} mode={exp_mode}")
+
+    if exp_mode == "passive":
+        result = run_passive(
+            config=config,
+            acquirer=acquirer,
+            model=model,
+            marker_backend=task.wrap_marker_backend(build_marker_backend(config)),
+            console=task_console,
+            refresh=lambda: None,
+            model_path=model_path,
+            session_dir=exp_session_dir,
+            stimulus_image_path=fallback_image_path,
+            subject_id=subject_id.replace("S", ""),
+            session_id=session_id,
+            task_name="passive",
+        )
+    else:
+        result = run_active(
+            config=config,
+            acquirer=acquirer,
+            model=model,
+            marker_backend=task.wrap_marker_backend(build_marker_backend(config)),
+            console=task_console,
+            refresh=lambda: None,
+            model_path=model_path,
+            session_dir=exp_session_dir,
+            stimulus_image_path=fallback_image_path,
+            subject_id=subject_id.replace("S", ""),
+            session_id=session_id,
+            task_name="active",
+        )
+
+    app.console.print(
+        f"[bold green]实验完成[/bold green] "
+        f"windows={result.windows_collected} "
+        f"saved={result.model_path}"
     )
 
 

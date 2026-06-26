@@ -9,7 +9,7 @@ import numpy as np
 import yaml
 
 from adaptation.active_visual_protocol import EVENT_CODES as ACTIVE_EVENT_CODES
-from adaptation.active_visual_protocol import ActiveVisualTiming
+from adaptation.active_visual_protocol import ActiveVisualTiming, build_full_active_trial_order
 from adaptation.calibrator import CalibrationResult
 from adaptation.session_recorder import SessionRecorder
 from tasks.visual_stimuli import REST_CLASS_ID, load_visual_stimuli
@@ -80,13 +80,17 @@ def run(
     model_path: Path,
     session_dir: Path,
     stimulus_image_path: Path,
+    subject_id: str = "001",
+    session_id: str = "01",
+    task_name: str = "active",
 ) -> CalibrationResult:
     timing = ActiveVisualTiming()
-    blocks = int(config.get("protocol", {}).get("visual_blocks", 1))
+    seed = int(config.get("protocol", {}).get("random_seed", 17))
     stimuli = load_visual_stimuli(config, fallback_image_path=stimulus_image_path)
+    n_images = len(stimuli)
     label_names = {idx: stimulus.display_name for idx, stimulus in stimuli.items()} | {_VISUAL_REST_CLASS_ID: "静息"}
 
-    window = VisualStimulusWindow(title="OI-MI", default_image_path=stimulus_image_path)
+    window = VisualStimulusWindow(title="OI-MI 主动想象实验", default_image_path=stimulus_image_path)
     window.start()
 
     recorder: SessionRecorder | None = None
@@ -116,54 +120,60 @@ def run(
             flush()
             refresh()
 
-        def pause_between_blocks(block_index: int) -> None:
-            evt = window.begin_pause(f"Block {block_index} 结束，按空格继续下一组")
-            console.print(f"[bold yellow]Block {block_index} 结束，等待空格继续[/bold yellow]")
-            while not evt.is_set():
-                flush()
-                refresh()
-                time.sleep(0.05)
+        def pause_for_rest(hour_index: int) -> None:
+            console.print(f"[bold yellow]第 {hour_index} 小时结束，休息 5 分钟[/bold yellow]")
+            emit_event("rest_start", int(ACTIVE_EVENT_CODES["REST_START"]), hour=hour_index)
+            window.show_black("休息时间", "5分钟")
+            sleep_with_recording(timing.rest_between_hours_sec)
+            window.show_black("休息结束", "即将开始下一阶段")
+            emit_event("rest_end", int(ACTIVE_EVENT_CODES["REST_END"]), hour=hour_index)
+            time.sleep(2.0)
 
-        emit_event("session_start", int(ACTIVE_EVENT_CODES["SESSION_START"]), exp="1.2")
-        for block_index in range(blocks):
-            if block_index > 0:
-                pause_between_blocks(block_index)
+        emit_event("session_start", int(ACTIVE_EVENT_CODES["SESSION_START"]), exp="1.2", task="active")
 
-            remaining = list(stimuli.keys())
-            trial_index = 0
-            while remaining:
-                global_trial = block_index * 10 + int(trial_index)
-                emit_event("trial_start", int(ACTIVE_EVENT_CODES["TRIAL_START"]), exp="1.2", block=block_index, trial=global_trial, remaining=list(remaining))
+        full_order = build_full_active_trial_order(seed=seed, n_images=n_images, trials_per_image=1000)
+        console.print(f"[bold cyan]生成 {len(full_order)} 个 trial，每张图片 {1000} 次[/bold cyan]")
 
-                window.show_black("Baseline", "1s")
-                flush()
-                baseline_start = int(recorder.sample_count)
-                emit_event("baseline", int(ACTIVE_EVENT_CODES["BASELINE"]), exp="1.2", block=block_index, trial=global_trial)
-                emit_label(_VISUAL_REST_CLASS_ID, exp="1.2", block=block_index, trial=global_trial)
-                sleep_with_recording(timing.baseline_sec)
-                flush()
-                baseline_end = int(recorder.sample_count)
-                segments.append(VisualSegment(_VISUAL_REST_CLASS_ID, baseline_start, baseline_end, "exp_1_2_baseline"))
+        trials_per_hour = 900
+        total_trials = len(full_order)
+        hour_count = (total_trials + trials_per_hour - 1) // trials_per_hour
 
-                window.show_black("黑屏主动想象", "2s")
-                console.print("[bold cyan]黑屏主动想象[/bold cyan] 2s")
-                flush()
-                imagine_start = int(recorder.sample_count)
-                emit_event("active_imagination", int(ACTIVE_EVENT_CODES["ACTIVE_IMAGINATION"]), exp="1.2", block=block_index, trial=global_trial)
-                sleep_with_recording(timing.active_imagination_sec)
-                flush()
-                imagine_end = int(recorder.sample_count)
+        current_trial = 0
+        for hour_index in range(hour_count):
+            if hour_index > 0:
+                pause_for_rest(hour_index)
 
-                items = [
+            start_trial = hour_index * trials_per_hour
+            end_trial = min(start_trial + trials_per_hour, total_trials)
+            
+            console.print(f"[bold cyan]第 {hour_index + 1} 小时: trial {start_trial + 1} - {end_trial}[/bold cyan]")
+
+            for trial_in_hour in range(start_trial, end_trial):
+                target_image_id = full_order[trial_in_hour]
+                stimulus = stimuli[int(target_image_id)]
+                global_trial = trial_in_hour
+
+                emit_event(
+                    "trial_start",
+                    int(ACTIVE_EVENT_CODES["TRIAL_START"]),
+                    exp="1.2",
+                    hour=hour_index,
+                    trial=global_trial,
+                    target_image_id=int(target_image_id),
+                )
+
+                all_items = [
                     SelectionItem(
                         item_id=int(img_id),
                         title=f"图片{int(img_id) + 1}",
                         image_path=stimuli[int(img_id)].image_path,
                     )
-                    for img_id in remaining
+                    for img_id in range(n_images)
                 ]
-                window.show_selection("请选择你刚才想象的图片", "点击缩略图按钮", items)
-                emit_event("image_selection", int(ACTIVE_EVENT_CODES["IMAGE_SELECTION"]), exp="1.2", block=block_index, trial=global_trial, remaining=list(remaining))
+                window.show_selection("请选择一张图片进行想象", "点击缩略图按钮", all_items)
+                console.print(f"[bold yellow][图片选择][/bold yellow] 请选择要想象的图片")
+                flush()
+                emit_event("image_selection", int(ACTIVE_EVENT_CODES["IMAGE_SELECTION"]), exp="1.2", hour=hour_index, trial=global_trial)
 
                 chosen: int | None = None
                 while chosen is None:
@@ -172,31 +182,53 @@ def run(
                     chosen = window.poll_selection()
                     time.sleep(0.02)
 
-                emit_label(int(chosen), exp="1.2", block=block_index, trial=global_trial, chosen=int(chosen))
-                segments.append(VisualSegment(int(chosen), imagine_start, imagine_end, "exp_1_2_imagine"))
-                stimulus = stimuli[int(chosen)]
+                emit_event("keypress", int(ACTIVE_EVENT_CODES["KEYPRESS"]), exp="1.2", hour=hour_index, trial=global_trial, chosen=int(chosen))
+                console.print(f"[bold yellow][已选择][/bold yellow] 图片{int(chosen) + 1}: {stimuli[int(chosen)].text}")
+
+                window.show_cross_mask()
+                console.print("[bold yellow][视觉残留消除][/bold yellow] 白色十字 0.5s")
+                flush()
+                emit_event("mosaic", int(ACTIVE_EVENT_CODES["MOSAIC"]), exp="1.2", hour=hour_index, trial=global_trial, chosen=int(chosen))
+                sleep_with_recording(timing.mosaic_sec)
+
+                window.show_black("回忆图片", "2s")
+                console.print("[bold cyan][黑屏回忆][/bold cyan] 2s")
+                flush()
+                recall_start = int(recorder.sample_count)
+                emit_event("recall", int(ACTIVE_EVENT_CODES["RECALL"]), exp="1.2", hour=hour_index, trial=global_trial, chosen=int(chosen))
+                emit_label(int(chosen), exp="1.2", hour=hour_index, trial=global_trial, chosen=int(chosen))
+                sleep_with_recording(timing.recall_sec)
+                flush()
+                recall_end = int(recorder.sample_count)
+                segments.append(VisualSegment(int(chosen), recall_start, recall_end, "exp_1_2_recall"))
+
+                window.show_black("休息", "0.5s")
+                flush()
+                iti_start = int(recorder.sample_count)
+                emit_event("iti", int(ACTIVE_EVENT_CODES["ITI"]), exp="1.2", hour=hour_index, trial=global_trial)
+                emit_label(_VISUAL_REST_CLASS_ID, exp="1.2", hour=hour_index, trial=global_trial)
+                sleep_with_recording(timing.iti_sec)
+                flush()
+                iti_end = int(recorder.sample_count)
+                segments.append(VisualSegment(_VISUAL_REST_CLASS_ID, iti_start, iti_end, "exp_1_2_iti"))
+
+                emit_event("trial_end", int(ACTIVE_EVENT_CODES["TRIAL_END"]), exp="1.2", hour=hour_index, trial=global_trial, chosen=int(chosen))
                 trials.append(
                     {
                         "exp": "1.2",
-                        "block": int(block_index),
+                        "hour": int(hour_index),
                         "trial_index": int(global_trial),
+                        "image_id": int(chosen),
                         "label_id": int(chosen),
-                        "stimulus_label": stimulus.label,
-                        "stimulus_text": stimulus.text,
-                        "stimulus_image": str(stimulus.image_path),
-                        "imagine_start_sample": int(imagine_start),
-                        "imagine_end_sample": int(imagine_end),
+                        "stimulus_label": stimuli[int(chosen)].label,
+                        "stimulus_text": stimuli[int(chosen)].text,
+                        "stimulus_image": str(stimuli[int(chosen)].image_path),
                     }
                 )
-                remaining.remove(int(chosen))
 
-                window.show_black("ITI", "1.5s")
-                emit_event("iti", int(ACTIVE_EVENT_CODES["ITI"]), exp="1.2", block=block_index, trial=global_trial)
-                emit_label(_VISUAL_REST_CLASS_ID, exp="1.2", block=block_index, trial=global_trial)
-                sleep_with_recording(timing.iti_sec)
-
-                emit_event("trial_end", int(ACTIVE_EVENT_CODES["TRIAL_END"]), exp="1.2", block=block_index, trial=global_trial)
-                trial_index += 1
+                current_trial += 1
+                if current_trial % 100 == 0:
+                    console.print(f"[bold cyan]进度[/bold cyan] {current_trial}/{total_trials} ({current_trial/total_trials*100:.1f}%)")
 
         emit_event("session_end", int(ACTIVE_EVENT_CODES["SESSION_END"]), exp="1.2")
         acquirer.stop_stream()
@@ -230,6 +262,14 @@ def run(
                 for seg in segments
             ],
         }
+        bids_base_dir = session_dir.parent.parent.parent if len(session_dir.parts) >= 3 else session_dir
+        bids_dir = recorder.export_bids(
+            bids_base_dir,
+            subject_id=subject_id,
+            session_id=session_id,
+            task_name=task_name,
+            metadata=metadata,
+        )
         recorder.export(session_dir, metadata=metadata)
         eeg = recorder.to_array()
         raw_X, X, y = _build_windows(eeg=eeg, segments=segments, config=config)

@@ -6,8 +6,8 @@ from typing import Any
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_IMAGE_COUNT = 10
-REST_CLASS_ID = 10
+DEFAULT_IMAGE_COUNT = 20
+REST_CLASS_ID = 20
 REST_LABEL = "静息"
 
 
@@ -116,14 +116,16 @@ def visual_label_names(config: dict[str, Any], *, fallback_image_path: Path | No
 
 
 def visual_test_mode_prompts(config: dict[str, Any], *, fallback_image_path: Path | None = None) -> dict[int, str]:
-    labels = visual_label_names(config, fallback_image_path=fallback_image_path)
-    prompts = {idx: f"想象图片 {idx + 1}: {labels[idx]}" for idx in range(DEFAULT_IMAGE_COUNT)}
+    fallback = fallback_image_path or resolve_project_path("assets/EEG.png")
+    try:
+        stimuli = load_visual_stimuli(config, fallback_image_path=fallback)
+        n_images = len(stimuli)
+    except RuntimeError:
+        n_images = DEFAULT_IMAGE_COUNT
+    labels = visual_label_names(config, fallback_image_path=fallback)
+    prompts = {idx: f"想象图片 {idx + 1}: {labels[idx]}" for idx in range(n_images)}
     prompts[REST_CLASS_ID] = "保持静息"
     return prompts
 
 
-def text_test_mode_prompts(config: dict[str, Any], *, fallback_image_path: Path | None = None) -> dict[int, str]:
-    labels = visual_label_names(config, fallback_image_path=fallback_image_path)
-    prompts = {idx: f"想象文本 {idx + 1}: {labels[idx]}" for idx in range(DEFAULT_IMAGE_COUNT)}
-    prompts[REST_CLASS_ID] = "保持静息"
-    return prompts
+

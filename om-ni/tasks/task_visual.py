@@ -29,11 +29,9 @@ from models.factory import ModelFactory
 from utils.markers import LSLCommandOutlet, MarkerBackend
 from utils.preprocessing import filter_and_transform
 from utils.stream_writer import StreamWriter
-from tasks.text_exp_1_1 import run as run_text_exp_1_1
-from tasks.text_exp_1_2 import run as run_text_exp_1_2
 from tasks.visual_exp_1_1 import run as run_visual_exp_1_1
 from tasks.visual_exp_1_2 import run as run_visual_exp_1_2
-from tasks.visual_stimuli import REST_CLASS_ID, text_test_mode_prompts, visual_label_names, visual_test_mode_prompts
+from tasks.visual_stimuli import REST_CLASS_ID, visual_label_names, visual_test_mode_prompts
 
 # ---------- 资产路径（基于本文件所在 tasks/ 目录的父目录） ----------
 _MOTOR_ROOT = Path(__file__).resolve().parent.parent
@@ -73,12 +71,9 @@ _VISUAL_TEST_MODE_PROMPTS = {idx: f"想象图片 {idx + 1}" for idx in range(10)
 _EXPERIMENT_DIR_NAMES = {
     "实验1.1 被动想象": "exp_1_1_visual_passive",
     "实验1.2 主动想象": "exp_1_2_visual_active",
-    "实验2.1 文本被动想象": "exp_2_1_text_passive",
-    "实验2.2 文本主动想象": "exp_2_2_text_active",
 }
 _TEST_MODE_CUE_DIR_NAMES = {
     "图片视觉 cue": "visual_cue",
-    "文本视觉 cue": "text_cue",
 }
 
 # ---------- 提示符号与事件解析 ----------
@@ -99,9 +94,6 @@ def _resolve_cue_symbol(message: str, *, event_type: str) -> tuple[str, bool] | 
     if "图片" in message:
         digits = "".join(ch for ch in message if ch.isdigit())
         return (digits if digits else _DISPLAY_SYMBOLS["TRANSITION"]), event_type == "prediction"
-    if "文本" in message or "文字" in message:
-        digits = "".join(ch for ch in message if ch.isdigit())
-        return (digits if digits else _DISPLAY_SYMBOLS["TRANSITION"]), event_type == "prediction"
     if "校准完成" in message:
         return _DISPLAY_SYMBOLS["DONE"], False
     if "执行失败" in message:
@@ -114,7 +106,7 @@ def _resolve_cue_symbol(message: str, *, event_type: str) -> tuple[str, bool] | 
         return _DISPLAY_SYMBOLS["TRANSITION"], False
     return None
 
-SIDEBAR_NAV_PAGES = ("首页", "设置", "连通检测", "校准", "测试模式", "实时解码")
+SIDEBAR_NAV_PAGES = ("首页", "设置", "连通检测", "校准", "实验", "测试模式", "实时解码")
 
 # ---------- StreamlitConsole 与 live view ----------
 class StreamlitConsole:
@@ -772,37 +764,79 @@ def render_home() -> None:
 
         在接下来的任务中，你将进行“视觉想象”实验。实验刺激将以**弹出全屏窗口**呈现（按 ESC 退出）。
 
-        **实验 1.1 被动想象图片（10 次）**
+        **实验1：被动想象图片**
 
-        - 静息态基线 1s
-        - 随机展示 1 张图片 1.5s（记忆）
-        - 灰色雪花屏遮罩 0.5s → 黑屏
-        - 回忆并想象该图片 2s
-        - 间隔 1.5s
+        - 随机展示 1 张图片 1s（记忆）
+        - 白色十字遮罩 0.5s（去除视觉残留）
+        - 黑屏，回忆并想象该图片 2s
+        - 间隔休息 0.5s
 
-        **实验 1.2 主动想象图片（10 次）**
+        **实验2：主动想象图片**
 
-        - 静息态基线 1s
-        - 黑屏 → 无刺激主动想象任意图片 2s
-        - 展示 10 张图（两排）→ 点击你刚才想象的图 → 该图消除
-        - 间隔 1.5s → 黑屏 → 想象下一张，直到全部选完
+        - 展示 20 张图片（5×4排列），点击选择一张图片
+        - 白色十字遮罩 0.5s（去除视觉残留）
+        - 黑屏，回忆并想象该图片 2s
+        - 间隔休息 0.5s
 
-        **实验 2.1 文本被动想象（10 次）**
-
-        - 静息态基线 1s
-        - 随机展示 1 个文本标签 1.5s（记忆）
-        - 黑屏白色十字遮罩 0.5s → 黑屏
-        - 回忆并想象该文本对应的目标 2s
-        - 间隔 1.5s
-
-        **实验 2.2 文本主动想象（10 次）**
-
-        - 静息态基线 1s
-        - 黑屏 → 无刺激主动想象任意目标 2s
-        - 展示 10 个文本选项（两排）→ 点击你刚才想象的目标 → 该选项消除
-        - 间隔 1.5s → 黑屏 → 想象下一项，直到全部选完
+        **实验说明：**
+        - 共 20 张图片，每张重复 1000 次，总计 20000 个 trial
+        - 每小时休息 5 分钟
+        - 数据按 BIDS 格式保存
         """
     )
+
+def render_experiment(config: dict) -> None:
+    st.title("视觉想象实验")
+
+    st.markdown(
+        """
+        ## 实验模式选择
+
+        **实验1：被动想象图片**
+        - 系统随机展示一张图片，被试记住并回忆
+        - 共20张图片，每张1000次，总计20000个trial
+
+        **实验2：主动想象图片**
+        - 被试从20张图片中选择一张进行想象
+        - 共20张图片，每张1000次，总计20000个trial
+
+        **Trial结构：**
+        - 图片展示 1s → 白色十字 0.5s → 黑屏回忆 2s → 间隔休息 0.5s
+        - 每小时休息5分钟
+        """
+    )
+
+    subject_id = st.text_input("被试 ID", value=str(config.get("subject_id", "S001")))
+    session_id = st.text_input("Session 编号", value="01")
+    exp_mode = st.selectbox("实验模式", ["passive", "active"], format_func=lambda x: "被动想象" if x == "passive" else "主动想象")
+
+    models = ModelFactory.list_models()
+    model_name = st.selectbox(
+        "模型",
+        models,
+        index=models.index(str(config.get("model_name", "eegnet"))),
+    )
+
+    if st.button("开始实验", type="primary"):
+        import subprocess
+        import sys
+        
+        st.info(f"正在启动实验... subject={subject_id} session={session_id} mode={exp_mode}")
+        
+        cmd = [
+            sys.executable,
+            str(Path(__file__).resolve().parent.parent / "cli.py"),
+            "run-experiment",
+            "--subject", subject_id,
+            "--session", session_id,
+            "--exp-mode", exp_mode,
+            "--model", model_name,
+            "--config", str(_current_config_path),
+        ]
+        
+        subprocess.Popen(cmd)
+        st.success("实验进程已启动！")
+
 
 def render_settings(config: dict) -> None:
     st.title("核心参数配置")
@@ -1016,14 +1050,12 @@ def render_probe(config: dict) -> None:
 
 def render_calibration(config: dict) -> None:
     st.title("被试校准")
-    st.markdown("图片/文本刺激与选择在弹出窗口中完成。本页仅显示日志。")
+    st.markdown("图片刺激与选择在弹出窗口中完成。本页仅显示日志。")
     experiment = st.radio(
         "实验选择",
         [
             "实验1.1 被动想象",
             "实验1.2 主动想象",
-            "实验2.1 文本被动想象",
-            "实验2.2 文本主动想象",
         ],
     )
     st.caption("弹窗默认全屏显示；按 ESC 退出全屏。多 block 时，block 间会隐藏窗口并按空格继续。")
@@ -1070,30 +1102,6 @@ def render_calibration(config: dict) -> None:
                     )
                 elif experiment == "实验1.2 主动想象":
                     result = run_visual_exp_1_2(
-                        config=config,
-                        acquirer=acquirer,
-                        model=model,
-                        marker_backend=marker_backend,
-                        console=task_console,
-                        refresh=refresh,
-                        model_path=model_path,
-                        session_dir=session_dir,
-                        stimulus_image_path=stimulus_path,
-                    )
-                elif experiment == "实验2.1 文本被动想象":
-                    result = run_text_exp_1_1(
-                        config=config,
-                        acquirer=acquirer,
-                        model=model,
-                        marker_backend=marker_backend,
-                        console=task_console,
-                        refresh=refresh,
-                        model_path=model_path,
-                        session_dir=session_dir,
-                        stimulus_image_path=stimulus_path,
-                    )
-                else:
-                    result = run_text_exp_1_2(
                         config=config,
                         acquirer=acquirer,
                         model=model,
@@ -1152,10 +1160,7 @@ def render_test_mode(config: dict) -> None:
                 return
             model.load(model_path)
             cue_dir_name = _TEST_MODE_CUE_DIR_NAMES[cue_mode]
-            if cue_mode == "文本视觉 cue":
-                test_mode_prompts = text_test_mode_prompts(config)
-            else:
-                test_mode_prompts = visual_test_mode_prompts(config)
+            test_mode_prompts = visual_test_mode_prompts(config)
 
             command_outlet = LSLCommandOutlet(
                 stream_name=str(config["output"]["command_stream_name"]),
@@ -1371,6 +1376,8 @@ def render_motor_gui(config: dict, config_path: Path) -> None:
         render_probe(config)
     elif mode == "校准":
         render_calibration(config)
+    elif mode == "实验":
+        render_experiment(config)
     elif mode == "测试模式":
         render_test_mode(config)
     elif mode == "实时解码":

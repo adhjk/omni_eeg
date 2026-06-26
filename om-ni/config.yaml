@@ -4,50 +4,90 @@ device_type: brainco
 hardware_dummy_mode: true
 task_mode: visual
 sfreq: 250
-n_classes: 11
+n_classes: 21
 window_sec: 0.5
 step_sec: 0.25
 visual_stimuli:
 - id: 0
-  label: album
-  text: 相册
-  image: assets/visual_stimuli/00_album.jpg
+  label: balance
+  text: 平衡木
+  image: assets/visual_stimuli/00_balance.jpg
 - id: 1
-  label: book
-  text: 书
-  image: assets/visual_stimuli/01_book.jpg
+  label: baton4
+  text: 指挥棒
+  image: assets/visual_stimuli/01_baton4.jpg
 - id: 2
-  label: calculator
-  text: 计算器
-  image: assets/visual_stimuli/02_calculator.jpg
+  label: bullet
+  text: 子弹
+  image: assets/visual_stimuli/02_bullet.jpg
 - id: 3
-  label: clock
-  text: 时钟
-  image: assets/visual_stimuli/03_clock.jpg
+  label: cart
+  text: 小车
+  image: assets/visual_stimuli/03_cart.jpg
 - id: 4
+  label: cat
+  text: 猫
+  image: assets/visual_stimuli/04_cat.jpg
+- id: 5
+  label: chaps
+  text: 皮裤
+  image: assets/visual_stimuli/05_chaps.jpg
+- id: 6
+  label: coat
+  text: 外套
+  image: assets/visual_stimuli/06_coat.jpg
+- id: 7
+  label: dessert
+  text: 甜点
+  image: assets/visual_stimuli/07_dessert.jpg
+- id: 8
   label: folder
   text: 文件夹
-  image: assets/visual_stimuli/04_folder.jpg
-- id: 5
-  label: glasses
-  text: 眼镜
-  image: assets/visual_stimuli/05_glasses.jpg
-- id: 6
-  label: magnifying_glass
-  text: 放大镜
-  image: assets/visual_stimuli/06_magnifying_glass.jpg
-- id: 7
-  label: map
-  text: 地图
-  image: assets/visual_stimuli/07_map.jpg
-- id: 8
-  label: notepad
-  text: 记事本
-  image: assets/visual_stimuli/08_notepad.jpg
+  image: assets/visual_stimuli/08_folder.jpg
 - id: 9
-  label: ruler
-  text: 尺子
-  image: assets/visual_stimuli/09_ruler.jpg
+  label: freezer
+  text: 冰箱
+  image: assets/visual_stimuli/09_freezer.jpg
+- id: 10
+  label: hoodie
+  text: 连帽衫
+  image: assets/visual_stimuli/10_hoodie.jpg
+- id: 11
+  label: jelly
+  text: 果冻豆
+  image: assets/visual_stimuli/11_jelly.jpg
+- id: 12
+  label: jukebox
+  text: 点唱机
+  image: assets/visual_stimuli/12_jukebox.jpg
+- id: 13
+  label: lamb
+  text: 羊羔
+  image: assets/visual_stimuli/13_lamb.jpg
+- id: 14
+  label: meatloaf
+  text: 肉糕
+  image: assets/visual_stimuli/14_meatloaf.jpg
+- id: 15
+  label: orange
+  text: 橙子
+  image: assets/visual_stimuli/15_orange.jpg
+- id: 16
+  label: piglet
+  text: 小猪
+  image: assets/visual_stimuli/16_piglet.jpg
+- id: 17
+  label: seed
+  text: 种子
+  image: assets/visual_stimuli/17_seed.jpg
+- id: 18
+  label: suit
+  text: 西装
+  image: assets/visual_stimuli/18_suit.jpg
+- id: 19
+  label: tube
+  text: 抹胸
+  image: assets/visual_stimuli/19_tube.jpg
 confidence_threshold: 0.7
 mc_dropout_passes: 1
 new_subject_duration_sec: 60
@@ -71,7 +111,7 @@ protocol:
     duration_sec: 3.0
     instruction: 睁眼注视中央十字，保持放松。
   trial_timing:
-    fixation_sec: 0.5
+    fixation_sec: 1.0
     cue_sec: 0.5
     control_sec: 2.0
     iti_sec: 0.5
