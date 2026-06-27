@@ -131,7 +131,7 @@ def run(
 
         emit_event("session_start", int(PASSIVE_EVENT_CODES["SESSION_START"]), exp="1.1", task="passive")
 
-        trials_per_image = 180
+        trials_per_image = 45
         full_order = build_full_trial_order(seed=seed, n_images=n_images, trials_per_image=trials_per_image)
         console.print(f"[bold cyan]生成 {len(full_order)} 个 trial，每张图片 {trials_per_image} 次[/bold cyan]")
 
