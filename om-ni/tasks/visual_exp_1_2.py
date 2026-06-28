@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import random
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -131,50 +132,33 @@ def run(
 
         emit_event("session_start", int(ACTIVE_EVENT_CODES["SESSION_START"]), exp="1.2", task="active")
 
-        trials_per_image = 45
-        full_order = build_full_active_trial_order(seed=seed, n_images=n_images, trials_per_image=trials_per_image)
-        console.print(f"[bold cyan]生成 {len(full_order)} 个 trial，每张图片 {trials_per_image} 次[/bold cyan]")
+        trials_per_image = 50
+        total_trials = n_images * trials_per_image
+        console.print(f"[bold cyan]生成 {total_trials} 个 trial，共 {trials_per_image} 组，每组 {n_images} 张图片[/bold cyan]")
 
-        trials_per_hour = 900
-        total_trials = len(full_order)
-        hour_count = (total_trials + trials_per_hour - 1) // trials_per_hour
+        rng = random.Random(int(seed))
 
         current_trial = 0
-        for hour_index in range(hour_count):
-            if hour_index > 0:
-                pause_for_rest(hour_index)
-
-            start_trial = hour_index * trials_per_hour
-            end_trial = min(start_trial + trials_per_hour, total_trials)
+        global_trial = 0
+        for group_index in range(trials_per_image):
+            console.print(f"[bold cyan]第 {group_index + 1}/{trials_per_image} 组开始[/bold cyan]")
             
-            console.print(f"[bold cyan]第 {hour_index + 1} 小时: trial {start_trial + 1} - {end_trial}[/bold cyan]")
-
-            for trial_in_hour in range(start_trial, end_trial):
-                target_image_id = full_order[trial_in_hour]
-                stimulus = stimuli[int(target_image_id)]
-                global_trial = trial_in_hour
-
-                emit_event(
-                    "trial_start",
-                    int(ACTIVE_EVENT_CODES["TRIAL_START"]),
-                    exp="1.2",
-                    hour=hour_index,
-                    trial=global_trial,
-                    target_image_id=int(target_image_id),
-                )
-
-                all_items = [
+            available_images = list(range(n_images))
+            rng.shuffle(available_images)
+            
+            while available_images:
+                selected_items = [
                     SelectionItem(
                         item_id=int(img_id),
                         title=f"图片{int(img_id) + 1}",
                         image_path=stimuli[int(img_id)].image_path,
                     )
-                    for img_id in range(n_images)
+                    for img_id in available_images
                 ]
-                window.show_selection("请选择一张图片进行想象", "点击缩略图按钮", all_items)
-                console.print(f"[bold yellow][图片选择][/bold yellow] 请选择要想象的图片")
+                window.show_selection("请选择一张图片进行想象", f"第{group_index + 1}组，剩余{len(available_images)}张", selected_items)
+                console.print(f"[bold yellow][图片选择][/bold yellow] 剩余 {len(available_images)} 张图片可选")
                 flush()
-                emit_event("image_selection", int(ACTIVE_EVENT_CODES["IMAGE_SELECTION"]), exp="1.2", hour=hour_index, trial=global_trial)
+                emit_event("image_selection", int(ACTIVE_EVENT_CODES["IMAGE_SELECTION"]), exp="1.2", trial=global_trial, group=group_index)
 
                 chosen: int | None = None
                 while chosen is None:
@@ -183,21 +167,32 @@ def run(
                     chosen = window.poll_selection()
                     time.sleep(0.02)
 
-                emit_event("keypress", int(ACTIVE_EVENT_CODES["KEYPRESS"]), exp="1.2", hour=hour_index, trial=global_trial, chosen=int(chosen))
-                console.print(f"[bold yellow][已选择][/bold yellow] 图片{int(chosen) + 1}: {stimuli[int(chosen)].text}")
+                available_images.remove(int(chosen))
+                stimulus = stimuli[int(chosen)]
+
+                emit_event(
+                    "trial_start",
+                    int(ACTIVE_EVENT_CODES["TRIAL_START"]),
+                    exp="1.2",
+                    trial=global_trial,
+                    group=group_index,
+                    image_id=int(chosen),
+                )
+                emit_event("keypress", int(ACTIVE_EVENT_CODES["KEYPRESS"]), exp="1.2", trial=global_trial, chosen=int(chosen))
+                console.print(f"[bold yellow][已选择][/bold yellow] 图片{int(chosen) + 1}: {stimulus.text}")
 
                 window.show_cross_mask()
                 console.print("[bold yellow][视觉残留消除][/bold yellow] 白色十字 0.5s")
                 flush()
-                emit_event("mosaic", int(ACTIVE_EVENT_CODES["MOSAIC"]), exp="1.2", hour=hour_index, trial=global_trial, chosen=int(chosen))
+                emit_event("mosaic", int(ACTIVE_EVENT_CODES["MOSAIC"]), exp="1.2", trial=global_trial, chosen=int(chosen))
                 sleep_with_recording(timing.mosaic_sec)
 
                 window.show_black("回忆图片", "2s")
                 console.print("[bold cyan][黑屏回忆][/bold cyan] 2s")
                 flush()
                 recall_start = int(recorder.sample_count)
-                emit_event("recall", int(ACTIVE_EVENT_CODES["RECALL"]), exp="1.2", hour=hour_index, trial=global_trial, chosen=int(chosen))
-                emit_label(int(chosen), exp="1.2", hour=hour_index, trial=global_trial, chosen=int(chosen))
+                emit_event("recall", int(ACTIVE_EVENT_CODES["RECALL"]), exp="1.2", trial=global_trial, chosen=int(chosen))
+                emit_label(int(chosen), exp="1.2", trial=global_trial, chosen=int(chosen))
                 sleep_with_recording(timing.recall_sec)
                 flush()
                 recall_end = int(recorder.sample_count)
@@ -206,31 +201,34 @@ def run(
                 window.show_black("休息", "0.5s")
                 flush()
                 iti_start = int(recorder.sample_count)
-                emit_event("iti", int(ACTIVE_EVENT_CODES["ITI"]), exp="1.2", hour=hour_index, trial=global_trial)
-                emit_label(_VISUAL_REST_CLASS_ID, exp="1.2", hour=hour_index, trial=global_trial)
+                emit_event("iti", int(ACTIVE_EVENT_CODES["ITI"]), exp="1.2", trial=global_trial)
+                emit_label(_VISUAL_REST_CLASS_ID, exp="1.2", trial=global_trial)
                 sleep_with_recording(timing.iti_sec)
                 flush()
                 iti_end = int(recorder.sample_count)
                 segments.append(VisualSegment(_VISUAL_REST_CLASS_ID, iti_start, iti_end, "exp_1_2_iti"))
 
-                emit_event("trial_end", int(ACTIVE_EVENT_CODES["TRIAL_END"]), exp="1.2", hour=hour_index, trial=global_trial, chosen=int(chosen))
+                emit_event("trial_end", int(ACTIVE_EVENT_CODES["TRIAL_END"]), exp="1.2", trial=global_trial, chosen=int(chosen))
                 trials.append(
                     {
                         "exp": "1.2",
-                        "hour": int(hour_index),
+                        "group": int(group_index),
                         "trial_index": int(global_trial),
                         "image_id": int(chosen),
                         "label_id": int(chosen),
-                        "stimulus_label": stimuli[int(chosen)].label,
-                        "stimulus_text": stimuli[int(chosen)].text,
-                        "stimulus_image": str(stimuli[int(chosen)].image_path),
+                        "stimulus_label": stimulus.label,
+                        "stimulus_text": stimulus.text,
+                        "stimulus_image": str(stimulus.image_path),
                     }
                 )
 
                 current_trial += 1
+                global_trial += 1
                 window.set_progress(current_trial, total_trials)
                 if current_trial % 100 == 0:
                     console.print(f"[bold cyan]进度[/bold cyan] {current_trial}/{total_trials} ({current_trial/total_trials*100:.1f}%)")
+            
+            console.print(f"[bold cyan]第 {group_index + 1}/{trials_per_image} 组完成[/bold cyan]")
 
         emit_event("session_end", int(ACTIVE_EVENT_CODES["SESSION_END"]), exp="1.2")
         acquirer.stop_stream()

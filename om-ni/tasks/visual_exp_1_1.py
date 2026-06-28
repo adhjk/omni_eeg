@@ -131,101 +131,86 @@ def run(
 
         emit_event("session_start", int(PASSIVE_EVENT_CODES["SESSION_START"]), exp="1.1", task="passive")
 
-        trials_per_image = 45
+        trials_per_image = 50
         full_order = build_full_trial_order(seed=seed, n_images=n_images, trials_per_image=trials_per_image)
         console.print(f"[bold cyan]生成 {len(full_order)} 个 trial，每张图片 {trials_per_image} 次[/bold cyan]")
 
-        trials_per_hour = 900
         total_trials = len(full_order)
-        hour_count = (total_trials + trials_per_hour - 1) // trials_per_hour
 
         current_trial = 0
-        for hour_index in range(hour_count):
-            if hour_index > 0:
-                pause_for_rest(hour_index)
+        for global_trial in range(total_trials):
+            image_id = full_order[global_trial]
+            stimulus = stimuli[int(image_id)]
 
-            start_trial = hour_index * trials_per_hour
-            end_trial = min(start_trial + trials_per_hour, total_trials)
-            
-            console.print(f"[bold cyan]第 {hour_index + 1} 小时: trial {start_trial + 1} - {end_trial}[/bold cyan]")
+            emit_event(
+                "trial_start",
+                int(PASSIVE_EVENT_CODES["TRIAL_START"]),
+                exp="1.1",
+                trial=global_trial,
+                image_id=int(image_id),
+                stimulus_label=stimulus.label,
+                stimulus_text=stimulus.text,
+                stimulus_image=str(stimulus.image_path),
+            )
 
-            for trial_in_hour in range(start_trial, end_trial):
-                image_id = full_order[trial_in_hour]
-                stimulus = stimuli[int(image_id)]
-                global_trial = trial_in_hour
+            window.show_image(f"图片{int(image_id) + 1}", "记忆 1s", image_path=stimulus.image_path)
+            console.print(f"[bold yellow][图片展示][/bold yellow] 图片{int(image_id) + 1}: {stimulus.text}")
+            flush()
+            emit_event(
+                "image_show",
+                int(PASSIVE_EVENT_CODES["IMAGE_SHOW"]),
+                exp="1.1",
+                trial=global_trial,
+                image_id=int(image_id),
+                stimulus_label=stimulus.label,
+                stimulus_text=stimulus.text,
+            )
+            sleep_with_recording(timing.image_show_sec)
 
-                emit_event(
-                    "trial_start",
-                    int(PASSIVE_EVENT_CODES["TRIAL_START"]),
-                    exp="1.1",
-                    hour=hour_index,
-                    trial=global_trial,
-                    image_id=int(image_id),
-                    stimulus_label=stimulus.label,
-                    stimulus_text=stimulus.text,
-                    stimulus_image=str(stimulus.image_path),
-                )
+            window.show_cross_mask()
+            console.print("[bold yellow][视觉残留消除][/bold yellow] 白色十字 0.5s")
+            flush()
+            emit_event("mosaic", int(PASSIVE_EVENT_CODES["MOSAIC"]), exp="1.1", trial=global_trial, image_id=int(image_id))
+            sleep_with_recording(timing.mosaic_sec)
 
-                window.show_image(f"图片{int(image_id) + 1}", "记忆 1s", image_path=stimulus.image_path)
-                console.print(f"[bold yellow][图片展示][/bold yellow] 图片{int(image_id) + 1}: {stimulus.text}")
-                flush()
-                emit_event(
-                    "image_show",
-                    int(PASSIVE_EVENT_CODES["IMAGE_SHOW"]),
-                    exp="1.1",
-                    hour=hour_index,
-                    trial=global_trial,
-                    image_id=int(image_id),
-                    stimulus_label=stimulus.label,
-                    stimulus_text=stimulus.text,
-                )
-                sleep_with_recording(timing.image_show_sec)
+            window.show_black("回忆图片", "2s")
+            console.print("[bold cyan][黑屏回忆][/bold cyan] 2s")
+            flush()
+            recall_start = int(recorder.sample_count)
+            emit_event("recall", int(PASSIVE_EVENT_CODES["RECALL"]), exp="1.1", trial=global_trial, image_id=int(image_id))
+            emit_label(int(image_id), exp="1.1", trial=global_trial, image_id=int(image_id))
+            sleep_with_recording(timing.recall_sec)
+            flush()
+            recall_end = int(recorder.sample_count)
+            segments.append(VisualSegment(int(image_id), recall_start, recall_end, "exp_1_1_recall"))
 
-                window.show_cross_mask()
-                console.print("[bold yellow][视觉残留消除][/bold yellow] 白色十字 0.5s")
-                flush()
-                emit_event("mosaic", int(PASSIVE_EVENT_CODES["MOSAIC"]), exp="1.1", hour=hour_index, trial=global_trial, image_id=int(image_id))
-                sleep_with_recording(timing.mosaic_sec)
+            window.show_black("休息", "0.5s")
+            flush()
+            iti_start = int(recorder.sample_count)
+            emit_event("iti", int(PASSIVE_EVENT_CODES["ITI"]), exp="1.1", trial=global_trial)
+            emit_label(_VISUAL_REST_CLASS_ID, exp="1.1", trial=global_trial)
+            sleep_with_recording(timing.iti_sec)
+            flush()
+            iti_end = int(recorder.sample_count)
+            segments.append(VisualSegment(_VISUAL_REST_CLASS_ID, iti_start, iti_end, "exp_1_1_iti"))
 
-                window.show_black("回忆图片", "2s")
-                console.print("[bold cyan][黑屏回忆][/bold cyan] 2s")
-                flush()
-                recall_start = int(recorder.sample_count)
-                emit_event("recall", int(PASSIVE_EVENT_CODES["RECALL"]), exp="1.1", hour=hour_index, trial=global_trial, image_id=int(image_id))
-                emit_label(int(image_id), exp="1.1", hour=hour_index, trial=global_trial, image_id=int(image_id))
-                sleep_with_recording(timing.recall_sec)
-                flush()
-                recall_end = int(recorder.sample_count)
-                segments.append(VisualSegment(int(image_id), recall_start, recall_end, "exp_1_1_recall"))
+            emit_event("trial_end", int(PASSIVE_EVENT_CODES["TRIAL_END"]), exp="1.1", trial=global_trial, image_id=int(image_id))
+            trials.append(
+                {
+                    "exp": "1.1",
+                    "trial_index": int(global_trial),
+                    "image_id": int(image_id),
+                    "label_id": int(image_id),
+                    "stimulus_label": stimulus.label,
+                    "stimulus_text": stimulus.text,
+                    "stimulus_image": str(stimulus.image_path),
+                }
+            )
 
-                window.show_black("休息", "0.5s")
-                flush()
-                iti_start = int(recorder.sample_count)
-                emit_event("iti", int(PASSIVE_EVENT_CODES["ITI"]), exp="1.1", hour=hour_index, trial=global_trial)
-                emit_label(_VISUAL_REST_CLASS_ID, exp="1.1", hour=hour_index, trial=global_trial)
-                sleep_with_recording(timing.iti_sec)
-                flush()
-                iti_end = int(recorder.sample_count)
-                segments.append(VisualSegment(_VISUAL_REST_CLASS_ID, iti_start, iti_end, "exp_1_1_iti"))
-
-                emit_event("trial_end", int(PASSIVE_EVENT_CODES["TRIAL_END"]), exp="1.1", hour=hour_index, trial=global_trial, image_id=int(image_id))
-                trials.append(
-                    {
-                        "exp": "1.1",
-                        "hour": int(hour_index),
-                        "trial_index": int(global_trial),
-                        "image_id": int(image_id),
-                        "label_id": int(image_id),
-                        "stimulus_label": stimulus.label,
-                        "stimulus_text": stimulus.text,
-                        "stimulus_image": str(stimulus.image_path),
-                    }
-                )
-
-                current_trial += 1
-                window.set_progress(current_trial, total_trials)
-                if current_trial % 100 == 0:
-                    console.print(f"[bold cyan]进度[/bold cyan] {current_trial}/{total_trials} ({current_trial/total_trials*100:.1f}%)")
+            current_trial += 1
+            window.set_progress(current_trial, total_trials)
+            if current_trial % 100 == 0:
+                console.print(f"[bold cyan]进度[/bold cyan] {current_trial}/{total_trials} ({current_trial/total_trials*100:.1f}%)")
 
         emit_event("session_end", int(PASSIVE_EVENT_CODES["SESSION_END"]), exp="1.1")
         acquirer.stop_stream()
