@@ -131,6 +131,8 @@ def run(
 
         emit_event("session_start", int(PASSIVE_EVENT_CODES["SESSION_START"]), exp="1.1", task="passive")
 
+        emit_event("experiment_start", int(PASSIVE_EVENT_CODES["EXPERIMENT_START"]), exp="1.1", task="passive")
+
         trials_per_image = 50
         full_order = build_full_trial_order(seed=seed, n_images=n_images, trials_per_image=trials_per_image)
         console.print(f"[bold cyan]生成 {len(full_order)} 个 trial，每张图片 {trials_per_image} 次[/bold cyan]")
@@ -212,6 +214,7 @@ def run(
             if current_trial % 100 == 0:
                 console.print(f"[bold cyan]进度[/bold cyan] {current_trial}/{total_trials} ({current_trial/total_trials*100:.1f}%)")
 
+        emit_event("experiment_end", int(PASSIVE_EVENT_CODES["EXPERIMENT_END"]), exp="1.1")
         emit_event("session_end", int(PASSIVE_EVENT_CODES["SESSION_END"]), exp="1.1")
         acquirer.stop_stream()
 

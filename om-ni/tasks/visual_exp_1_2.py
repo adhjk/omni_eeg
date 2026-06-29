@@ -132,6 +132,8 @@ def run(
 
         emit_event("session_start", int(ACTIVE_EVENT_CODES["SESSION_START"]), exp="1.2", task="active")
 
+        emit_event("experiment_start", int(ACTIVE_EVENT_CODES["EXPERIMENT_START"]), exp="1.2", task="active")
+
         trials_per_image = 50
         total_trials = n_images * trials_per_image
         console.print(f"[bold cyan]生成 {total_trials} 个 trial，共 {trials_per_image} 组，每组 {n_images} 张图片[/bold cyan]")
@@ -230,6 +232,7 @@ def run(
             
             console.print(f"[bold cyan]第 {group_index + 1}/{trials_per_image} 组完成[/bold cyan]")
 
+        emit_event("experiment_end", int(ACTIVE_EVENT_CODES["EXPERIMENT_END"]), exp="1.2")
         emit_event("session_end", int(ACTIVE_EVENT_CODES["SESSION_END"]), exp="1.2")
         acquirer.stop_stream()
 
