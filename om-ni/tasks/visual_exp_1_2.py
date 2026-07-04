@@ -13,6 +13,7 @@ from adaptation.active_visual_protocol import EVENT_CODES as ACTIVE_EVENT_CODES
 from adaptation.active_visual_protocol import ActiveVisualTiming, build_full_active_trial_order
 from adaptation.calibrator import CalibrationResult
 from adaptation.session_recorder import SessionRecorder
+from tasks.mouse_auto_click import click_screen_position
 from tasks.visual_stimuli import REST_CLASS_ID, load_visual_stimuli
 from tasks.visual_window import SelectionItem, VisualStimulusWindow
 from utils.preprocessing import filter_and_transform
@@ -26,6 +27,13 @@ class VisualSegment:
     start_sample: int
     end_sample: int
     name: str
+
+
+def _auto_click_selection_if_enabled(config: dict[str, Any], window: VisualStimulusWindow) -> None:
+    if not bool(config.get("auto_click", False)):
+        return
+    x, y = window.wait_for_selection_target()
+    click_screen_position(x, y, duration_sec=0.3)
 
 
 def _build_windows(*, eeg: np.ndarray, segments: list[VisualSegment], config: dict[str, Any]) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -161,6 +169,7 @@ def run(
                 console.print(f"[bold yellow][图片选择][/bold yellow] 剩余 {len(available_images)} 张图片可选")
                 flush()
                 emit_event("image_selection", int(ACTIVE_EVENT_CODES["IMAGE_SELECTION"]), exp="1.2", trial=global_trial, group=group_index)
+                _auto_click_selection_if_enabled(config, window)
 
                 chosen: int | None = None
                 while chosen is None:

@@ -3,6 +3,7 @@ model_name: eegnet
 device_type: brainco
 hardware_dummy_mode: true
 task_mode: visual
+auto_click: true
 sfreq: 250
 n_classes: 21
 window_sec: 0.5

@@ -19,9 +19,21 @@ _IMAGE_BUTTON_FONT = (_UI_FONT_FAMILY, 14)
 _TEXT_BUTTON_FONT = (_UI_FONT_FAMILY, 26, "bold")
 _PROGRESS_FONT = (_UI_FONT_FAMILY, 18, "bold")
 
+
 def debug_log(msg: str) -> None:
     if DEBUG:
         print(f"[VisualWindow] {msg}")
+
+
+def _top_left_widget_center(widgets: list[Any]) -> tuple[int, int] | None:
+    if not widgets:
+        return None
+    widget = min(widgets, key=lambda item: (int(item.winfo_rooty()), int(item.winfo_rootx())))
+    return (
+        int(widget.winfo_rootx()) + int(widget.winfo_width()) // 2,
+        int(widget.winfo_rooty()) + int(widget.winfo_height()) // 2,
+    )
+
 
 @dataclass(slots=True)
 class SelectionItem:
@@ -62,6 +74,9 @@ class VisualStimulusWindow:
         self._start_error: Exception | None = None
         self._fullscreen = True
         self._selection_queue: queue.Queue[int] = queue.Queue()
+        self._selection_target_ready = threading.Event()
+        self._selection_target_lock = threading.Lock()
+        self._selection_target: tuple[int, int] | None = None
         self._root = None
         debug_log("窗口实例初始化完成")
 
@@ -141,7 +156,19 @@ class VisualStimulusWindow:
 
     def show_selection(self, title: str, subtitle: str, items: list[SelectionItem]) -> None:
         debug_log(f"show_selection: title={title}, items count={len(items)}")
+        with self._selection_target_lock:
+            self._selection_target = None
+            self._selection_target_ready.clear()
         self._queue.put(("selection", {"title": str(title), "subtitle": str(subtitle), "items": list(items)}))
+
+    def wait_for_selection_target(self, timeout_sec: float = 8.0) -> tuple[int, int]:
+        if not self._selection_target_ready.wait(timeout=max(float(timeout_sec), 0.0)):
+            raise RuntimeError(f"自动点击目标定位超时（{float(timeout_sec):g} 秒）")
+        with self._selection_target_lock:
+            target = self._selection_target
+        if target is None:
+            raise RuntimeError("自动点击目标定位失败：当前选择页没有可见的图片按钮")
+        return target
 
     def show_text_selection(self, title: str, subtitle: str, items: list[TextSelectionItem]) -> None:
         debug_log(f"show_text_selection: title={title}, items count={len(items)}")
@@ -360,6 +387,7 @@ class VisualStimulusWindow:
                 items: list[SelectionItem] = list(payload.get("items") or [])
                 debug_log(f"共有 {len(items)} 个选项")
                 selection_frame.pack(fill="both", expand=True, pady=(10, 20))
+                image_buttons: list[Any] = []
                 for idx, item in enumerate(items):
                     try:
                         thumb = load_photo(item.image_path, max_size=(180, 140))
@@ -390,11 +418,18 @@ class VisualStimulusWindow:
                     )
                     btn.image = thumb
                     btn.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
+                    image_buttons.append(btn)
 
                 for i in range(5):
                     selection_frame.grid_columnconfigure(i, weight=1)
                 for i in range(max(1, (len(items) + 4) // 5)):
                     selection_frame.grid_rowconfigure(i, weight=1)
+                root.update_idletasks()
+                target = _top_left_widget_center(image_buttons)
+                with self._selection_target_lock:
+                    self._selection_target = target
+                    self._selection_target_ready.set()
+                debug_log(f"最左上图片按钮中心坐标: {target}")
                 debug_log("选择界面构建完成")
 
             def apply_text_selection(payload: dict[str, Any]) -> None:
