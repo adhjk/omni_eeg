@@ -161,7 +161,7 @@ class VisualStimulusWindow:
             self._selection_target_ready.clear()
         self._queue.put(("selection", {"title": str(title), "subtitle": str(subtitle), "items": list(items)}))
 
-    def wait_for_selection_target(self, timeout_sec: float = 8.0) -> tuple[int, int]:
+    def wait_for_selection_target(self, timeout_sec: float = 300.0) -> tuple[int, int]:
         if not self._selection_target_ready.wait(timeout=max(float(timeout_sec), 0.0)):
             raise RuntimeError(f"自动点击目标定位超时（{float(timeout_sec):g} 秒）")
         with self._selection_target_lock:
